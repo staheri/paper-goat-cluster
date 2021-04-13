@@ -1,0 +1,63 @@
+\newcommand{\ignore}[1]{ } % ignore blocks of text
+\newcommand{\maketiny}[1]{{\tiny G: #1}} % ignore blocks of text
+\newcommand{\ganesh}[1]{\todo[inline,size=\small, color=purple!40]{G: #1}}
+
+\newcommand{\etc}{etc.\@\xspace}
+\newcommand{\ie}{i.e.\@\xspace}
+\newcommand{\eg}{e.g.\@\xspace}
+
+%% colors
+\newcommand{\tbl}[1]{\textcolor{blue}{#1}}
+\newcommand{\tb}[1]{\textcolor{black}{#1}}
+\newcommand{\tr}[1]{\textcolor{red}{#1}}
+\newcommand{\tg}[1]{\textcolor{green}{#1}}
+
+\newcommand\ggcmt[1]{\todo[inline, size=\small, color=green!40]{GG: #1}}
+\newcommand\ggcmtside[1]{\todo[size=\scriptsize, color=green!40]{GG: #1}}
+
+\newcommand\stcmt[1]{\todo[inline, size=\small, color=orange!60]{ST: #1}}
+\newcommand\stcmtside[1]{\todo[size=\scriptsize, color=orange!40]{ST: #1}}
+
+%--\newcommand{\circleRtool}{circleRtool\circledR\xspace}
+
+%%% Local Variables:
+%%% mode: latex
+%%% eval: (flyspell-mode 1)
+%%% TeX-master: "root.tex"
+%%% End:
+
+
+\renewcommand{\algorithmcfname}{Procedure}
+
+
+\makeatletter
+\def\BState{\State\hskip-\ALG@thistlm}
+\makeatother
+
+\definecolor{codegreen}{rgb}{0,0.3,0}
+\definecolor{codegray}{rgb}{0.5,0.5,0.5}
+\definecolor{codepurple}{rgb}{0.58,0,0.82}
+\definecolor{backcolour}{rgb}{0.98,0.98,0.98}
+
+\lstdefinestyle{mystyle}{
+    backgroundcolor=\color{backcolour},
+    commentstyle=\color{codegreen},
+    keywordstyle=\color{magenta},
+    numberstyle=\tiny\color{codegray},
+    stringstyle=\color{codepurple},
+    basicstyle=\ttfamily\scriptsize,,
+    breakatwhitespace=false,
+    breaklines=true,
+    captionpos=b,
+    keepspaces=true,
+    numbers=left,
+    numbersep=4pt,
+    showspaces=false,
+    showstringspaces=false,
+    showtabs=false,
+    tabsize=2,
+    morekeywords={pragma, omp}
+}
+
+\lstset{style=mystyle}
+\lstset{escapeinside={<@}{@>}}

@@ -1,0 +1,93 @@
+\documentclass{svproc}
+% The preceding line is only needed to identify funding in the first footnote. If that is unneeded, please comment it out.
+%\usepackage[table]{xcolor}
+\usepackage{paralist} % compactitem etc
+\usepackage{booktabs} % For formal tables
+\usepackage{numprint}
+\usepackage{xspace}
+%\usepackage{cite}
+\usepackage{amsmath,amssymb,amsfonts}
+\usepackage{algorithmic}
+\usepackage{graphicx}
+\usepackage{color}
+\usepackage{textcomp}
+\usepackage[normalem]{ulem}
+\usepackage{soul}
+\usepackage{multirow}
+\usepackage{multicol}
+\usepackage{footmisc}
+\usepackage{dblfloatfix}
+\usepackage{listings}
+\usepackage[utf8]{inputenc}
+\usepackage[english]{babel}
+\usepackage[noadjust]{cite}
+
+\usepackage[table,xcdraw]{xcolor}
+%\usepackage[noline,noend]{algorithm2e}
+\usepackage[noline]{algorithm2e}
+\usepackage{url}
+\def\UrlFont{\rmfamily}
+
+
+\input{macros.tex}
+
+\begin{document}
+\mainmatter              % start of a contribution
+%
+\title{GOAT}
+%
+\titlerunning{Go analysis and testing}
+%
+\author{Saeed Taheri \and Ganesh Gopalakrishnan}
+%
+\authorrunning{S. Taheri \and G. Gopalakrishnan} % abbreviated author list (for running head)
+%
+%%%% list of authors for the TOC (use if author list has to be modified)
+\tocauthor{Ivar Ekeland, Roger Temam, Jeffrey Dean, David Grove,
+Craig Chambers, Kim B. Bruce, and Elisa Bertino}
+%
+\institute{University of Utah, Salt Lake City UT 84112, USA,\\
+\email{\{staheri,ganesh\}@cs.utah.edu},
+}
+
+\maketitle              % typeset the title of the contribution
+
+
+
+\begin{abstract}
+\label{abs}
+\input{abstract.tex}
+\keywords{golang,concurrency,testing,debugging}
+\end{abstract}
+
+
+\section{Introduction}
+\label{sec:intro}
+\input{intro.tex}
+
+
+\section{Background}
+\label{sec:bg}
+\input{background.tex}
+
+\section{GOAT Design}
+\label{sec:design}
+\input{design.tex}
+
+\section{Benchmark}
+\label{sec:bench}
+\input{bench.tex}
+
+
+
+\section{Related Work}
+\label{sec:related}
+\input{relatedwork.tex}
+
+
+
+\bibliographystyle{splncs04}
+\bibliography{bibs}
+
+
+\end{document}
