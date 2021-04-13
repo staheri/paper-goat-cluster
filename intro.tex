@@ -1,0 +1,57 @@
+\stcmtside{Intro to Go}
+
+\stcmt{
+- Go is statically typed language
+\\
+- Its concurrency originates from CSP Hoar \cite{hoare-csp78}
+\\
+- goroutines, channels, scheduler, serialization features such as mutex, waitgroups, condvars
+
+}
+
+\stcmtside{
+Motivating for Go debugging
+}
+\stcmt{
+In traditional shared-memory concurrent languages such as Java/C/C++, threads interact with each other via shared memory.
+%
+Processes in CSP-based languages such as Erlang communicate through mailbox (asynchronous) message passing.
+%
+Go brings all these features together into one language and encourages developers to \textit{share memory through communication} for safe and straightforward concurrency and parallelism.
+%
+The visibility guarantee of memory writes is specified in the memory model\cite{go-memModel} under synchronization constraints (\textit{happens-before} partial order \cite{lamport-hb-1978}).
+%
+The language is equipped with a rich vocabulary of \textit{serialization} features to facilitate the memory model constraints; they include synchronous and asynchronous communication (either unbuffered or buffered channels), memory protection, and custom barriers for efficient synchronization.
+%
+This conflation of features has, unfortunately, greatly exacerbated the complexity of Go debugging.
+%
+In fact, the popularity of Go has outpaced its debugging support~\cite{go-survey,tu-concurrentBugs-asplos19,yuan-gobench-cgo21}.
+%
+There are some encouraging developments in support of debugging, such as a data race checker \cite{go-race-blog} that has now become a standard feature of Go, and has helped catch many a bug.
+%
+However, the support for ``traditional concurrency debugging'' such as detecting atomicity violations and Go-specific bug-hunting support for Go idioms (e.g., misuse of channels and locks) remain insufficiently addressed.
+%
+}
+
+\stcmtside{
+What we have done
+}
+\stcmt{
+While good work has been proposed to address debugging concurrent aspect of Go, here are some limitations that they have:
+\\
+- State explosion problem for static analysis
+\\
+- Concurrency features and modern concepts of Go (such as Select) prevent tools for accurate translation/conversion/abstraction to reflect target program behavior (\eg dingo-hunter (the static analyzer) is unable to translate real-world applications into MiGo (the behavioral type system) for checking channel safety and program liveness. Even for GoKer, it failed (crashed) to analyze on 29 bugs )
+\\
+- Tools are too focused on a specific class of bug (symptom or cause).
+\\
+We introduce a framework that provides a comprehensive model of execution automatically.
+%
+This model hepls with in-depth information about dynamic behavior of written code
+%
+Debugger can observe, perceive and compare the model against the mental model at the time of development.
+%
+\textbf{Automatic}
+\textbf{Accurate} and \textbf{Comprehensive}
+\textbf{Perturb scheduler}
+}
