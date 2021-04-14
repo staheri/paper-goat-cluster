@@ -1,9 +1,26 @@
+After primary experiments on toy examples, we wanted to asses the effectiveness of GOAT in detecting bugs.
+%
+We evaluated GoBench
+
+68 bugs
+
+Built-in deadlock detector misses some bugs
+Lock-based deadlock detectors misses some bugs
+GoLeak misses some
+Goat misses some
 
 \subsubsection{GoBench}
 \label{sec:gobench}
-
+\begin{itemize}
+  \item Introduce GoBench
+  \item GoKer (68 blocking + 35 non-blocking (race)) TOT=103
+\end{itemize}
 \subsubsection{Results}
 \label{sec:results}
 
 \subsubsection{Discussion}
 \label{discussion}
+
+
+
+fix detecting main and application goroutines 

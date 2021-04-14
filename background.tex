@@ -1,0 +1,16 @@
+\begin{itemize}
+  \item A motivating example
+  \item Unlike traditional concurrent programs, Go suffers from new kinds of concurrent problems
+  \item Goroutines are lightweight thus leaks get overlooked
+  \item Causes of such leaks varies a lot
+  \begin{itemize}
+    \item resource deadlocks (double locking, AB-BA lock, blocking wait, etc.)
+    \item communication deadlocks (blocking rendezvous communication or channel buffer full)
+    \item mixed deadlocks (example \ref{ex})
+  \end{itemize}
+  \item \textbf{The are very few tools that can detect such leaks}
+  \item \textbf{Still each tool has limitations. Either focues on a specific class of bugs or not performing well on some common scnarios, static and dynamic}
+  \item \textbf{Due to non-determinism scheduler of Go, tools still miss to catch bugs}. Other than the scheduler, \textit{Select} is an important part of the concurrency model of Go and source of non-determinism that allows programmers to design a non-blocking program. Depending on the program state at any given moment the dynamic behavior of the program changes from run to run.
+  \item \textbf{\goat accelerates bug exposure by manipulating the scheduler around critical points}
+  \item \stcmt{we can talk about coverage here too}
+\end{itemize}

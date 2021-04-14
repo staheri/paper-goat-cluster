@@ -1,0 +1,35 @@
+When enabled, the execution tracer package captures and compresses an execution trace (ET).
+%
+Upon program termination, the ET is flushed to an IO buffer.
+%
+The decompressed ET is a sequence of events with a precise nanosecond-precision timestamp and a stacktrace for most events (total of 49 events \cite{goParserSource}, categorized and summarized in table \ref{tab:events}).
+%
+Through a one-time patch, we extend and enrich ETs with \textit{concurrency usage} events to obtain \textit{execution concurrency traces} (ECT):
+\begin{itemize}
+    \item \textbf{Channel:} For each channel operation (make, send, receive, close), ECT includes an event with the full stack trace of up to application source line number, a unique id to distinguish between different invocations (e.g., in a loop), and an argument to show the type of operation (blocking/non-blocking based on the state of channel buffer). Upon creation, a unique id is assigned to each channel to keep track of its operations during execution.
+    \item \textbf{Mutex, WaitGroup \& Conditional Variables:} Similar to channels, we assign a unique id to each concurrency object and emit an event for each of their operations (lock, unlock, add, wait, signal, broadcast). We also distinguish between non-blocking operations (e.g., free mutex) and blocking ones.
+    \item \textbf{Select \& Schedule:} The scheduler and the \textit{select} structure introduce non-determinism to the execution. We keep track of the decisions made by the scheduler and select statements to obtain an accurate \textit{decision path} during execution.
+\end{itemize}
+
+Having a precise model of concurrency primitives such as the ECT enables interesting analysis in offline space.
+%
+Valuable knowledge such as frequency of concurrency usage per goroutine, blocking/non-blocking execution of concurrency primitives, and the last event executed by each goroutine (for leak detection) can get extracted from ECT.
+
+
+\begin{table}[b]
+    \centering
+        \begin{tabular}{|l|l|}
+        \hline
+        \rowcolor[HTML]{C0C0C0}
+        \multicolumn{1}{|c|}{\cellcolor[HTML]{C0C0C0}\textbf{Category}} & \multicolumn{1}{c|}{\cellcolor[HTML]{C0C0C0}\textbf{Description}} \\ \hline
+        Process & Indication of process/thread start and stop \\ \hline
+        GC/Mem & Garbage collection and memory operation events\\ \hline
+        Goroutine & Goroutines events: create, block, start, stop, end, etc. \\ \hline
+        Syscall & Interactions with system calls \\ \hline
+        Users & User annotated regions and tasks (for bounded tracing) \\ \hline
+        Misc & System related events like futile wakeup or timers \\ \hline
+        \end{tabular}
+
+    \caption{Event categories by the Go execution tracer}
+    \label{tab:events}
+\end{table}
