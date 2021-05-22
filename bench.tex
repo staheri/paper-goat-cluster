@@ -22,5 +22,17 @@ Goat misses some
 \label{discussion}
 
 
+\begin{figure}
+\centering
+  \includegraphics[width=.95\linewidth]{figs/P4_detections.pdf}
+  \caption{Distribution of detected bugs by built-in deadlock detector (BUILTINDL), LockDL, GoLeak, and GOAT different d. (over 1000 runs). pdl: partial deadlock, gdl: global deadlock, crash/halt: causes the program to crash or halt on detection, x: nothing is detected }
+  \label{fig:detection}
+\end{figure}
 
-fix detecting main and application goroutines 
+
+\begin{figure}
+\centering
+  \includegraphics[width=.95\linewidth]{figs/P4_runs.pdf}
+  \caption{Distribution of required number of iterations to detect the bug for each tool}
+  \label{fig:runs}
+\end{figure}
