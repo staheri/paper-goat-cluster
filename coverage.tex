@@ -1,3 +1,21 @@
+\stcmt{intro to coverage}
+\begin{itemize}
+  \item A coverage metric specify a set of requirements on a target program which a complete test should satisfy
+  \item A test requirement is a condition over a target
+  program
+  \item An execution covers a test requirement when the execution satisfies the
+  test requirement
+  \item The coverage level of a test (i.e., a set of executions) is the ratio of the test requirements covered by at least one execution to the number of all test requirements
+  \item A coverage metric is used for assessing progress of a test and measure the quality of a test (to assess whether a test is sufficient or not)
+\end{itemize}
+
+
+–
+–
+–
+
+
+
 
 \begin{figure}
 \centering
@@ -7,17 +25,28 @@
 \end{figure}
 
 \begin{itemize}
-  \item Background on Coverage
   \item Limitations of current concurrency coverage criterias
   \item what it takes to define a good coverage metric
   \begin{itemize}
     \item thorough observation of target bugs, their symptoms, their causes and fixes.
-    \item according to \cite{}
   \end{itemize}
   \item
 \end{itemize}
 
 \subsection{Coverage Idea}
+
+Figure \ref{fig:rare_bugs} shows that even a drastically simplified versions
+
+we define a coverage metric to quantify the quality of tests
+
+we inject random delays which is effective in testing different scenarios
+
+we measure the coverage for our testing using the tracing mechanism
+
+
+
+we
+
 Existing concurrent coverage metrics target either synchronization primitives or memory access for Java. In Java, locks and other serialization techniques like conditional variables and semaphores usually provide mutual exclusion and memory protection (i.e., no “direct” communication between threads are involved. In Go, a goroutine can directly unblock another goroutine)
 \\
 -	For example in Java,  thread A either is blocked from entering a critical section (or mutually exclusive section) protected by lock L or is blocking other threads (e.g., thread B) from entering the critical section.
@@ -77,3 +106,25 @@ It is crucial to maintain a static model of goroutines and coverage metrics duri
   \caption{kuberenetes11298 coverage}
   \label{fig:kubernetes_coverage}
 \end{figure}
+
+
+
+
+
+
+
+
+
+
+
+\subsection{Coverage Definition}
+test coverage analysis
+how well we are testing the program
+systematic testing
+how well we are testing
+what is the minimum coverage requirement for exposing the bug
+
+why are we defining a new coverage metric?
+because we want to quantify the quality of concurrent software testing for a language like go
+
+to do

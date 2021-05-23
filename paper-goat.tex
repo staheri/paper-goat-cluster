@@ -25,6 +25,15 @@
 \usepackage[utf8]{inputenc}
 \usepackage[english]{babel}
 \usepackage[noadjust]{cite}
+\usepackage{listings}
+\usepackage{minted}
+\usepackage{amsthm}
+\usepackage{amssymb}
+\usepackage{pdfrender}
+
+% If you use beamer only pass "xcolor=table" option, i.e. \documentclass[xcolor=table]{beamer}
+\usepackage[normalem]{ulem}
+\useunder{\uline}{\ul}{}
 
 \usepackage[table,xcdraw]{xcolor}
 %\usepackage[noline,noend]{algorithm2e}
@@ -72,20 +81,19 @@ golang, concurrency, testing coverage analysis
 \label{sec:intro}
 \input{intro.tex}
 
+asdasdasd
+
 
 \section{Background}
 \label{sec:bg}
 \input{background.tex}
 
-\section{GOAT Design}
+\section{GOAT: Debugging}
 \label{sec:design}
 \input{design.tex}
 
-\section{Benchmark}
-\label{sec:bench}
-\input{bench.tex}
 
-\section{Coverage}
+\section{GOAT: Coverage}
 \label{sec:coverage}
 \input{coverage.tex}
 

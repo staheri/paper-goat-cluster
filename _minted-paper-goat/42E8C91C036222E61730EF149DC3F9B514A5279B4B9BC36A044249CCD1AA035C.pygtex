@@ -1,0 +1,16 @@
+\begin{Verbatim}[commandchars=\\\{\},codes={\catcode`\$=3\catcode`\^=7\catcode`\_=8}]
+\PYG{k+kn}{package} \PYG{n+nx}{main}
+\PYG{k+kn}{import} \PYG{l+s}{\PYGZdq{}sync\PYGZdq{}}
+
+\PYG{k+kd}{type} \PYG{n+nx}{Container} \PYG{k+kd}{struct}\PYG{p}{\PYGZob{}} \PYG{esc}{\label{bugListing:containerType_start}}
+  \PYG{n+nx}{sync}\PYG{p}{.}\PYG{n+nx}{Mutex}
+  \PYG{n+nx}{stop}  \PYG{k+kd}{chan} \PYG{k+kd}{struct}\PYG{p}{\PYGZob{}}\PYG{p}{\PYGZcb{}}
+\PYG{p}{\PYGZcb{}} \PYG{esc}{\label{bugListing:containerType_end}}
+
+\PYG{k+kd}{func} \PYG{n+nx}{main}\PYG{p}{(}\PYG{p}{)} \PYG{p}{\PYGZob{}}
+  \PYG{n+nx}{container} \PYG{o}{:=} \PYG{o}{\PYGZam{}}\PYG{n+nx}{Container}\PYG{p}{\PYGZob{}} \PYG{esc}{\label{bugListing:container_create_start}}
+       \PYG{n+nx}{stop}\PYG{p}{:}\PYG{n+nb}{make}\PYG{p}{(}\PYG{k+kd}{chan} \PYG{k+kd}{struct}\PYG{p}{\PYGZob{}}\PYG{p}{\PYGZcb{}}\PYG{p}{)}\PYG{p}{\PYGZcb{}} \PYG{esc}{\label{bugListing:container_create_end}}
+  \PYG{k}{go} \PYG{n+nx}{Monitor}\PYG{p}{(}\PYG{n+nx}{container}\PYG{p}{)} \PYG{esc}{\label{bugListing:main_go_monitor}}
+  \PYG{k}{go} \PYG{n+nx}{StatusChange}\PYG{p}{(}\PYG{n+nx}{container}\PYG{p}{)} \PYG{esc}{\label{bugListing:main_go_statChange}}
+\PYG{p}{\PYGZcb{}}
+\end{Verbatim}
