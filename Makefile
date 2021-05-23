@@ -18,7 +18,7 @@ GARBAGE    += $(TOPLEVEL:%.tex=%.blg)
 GARBAGE    += $(wildcard figures/*-eps-converted-to.pdf)
 
 # To use custom fonts, build with xelatex instead
-LATEX       = pdflatex
+LATEX       = pdflatex --shell-escape
 #LATEX       = xelatex
 
 .PHONY: all

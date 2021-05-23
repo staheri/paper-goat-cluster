@@ -108,3 +108,6 @@ acs-*.bib
 
 # standalone packages
 *.sta
+
+*.pygtex
+*.pygstyle
