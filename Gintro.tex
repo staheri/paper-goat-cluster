@@ -16,11 +16,9 @@ the debugging ecosystem in addition to the codebase itself.
 
 Motivated by these considerations,
 in this study we take the feature-rich language, namely Go,
-and research the extent to which a simple and well-known
-mechanism---namely {\em schedule manipulation}---can be used
-to find bugs.
-
-
+and offer a combined static and dynamic approach for debugging
+Go programs.
+%
 Not only is Go gaining in acceptance in the Cloud community,
 it also involves shared memory, message passing, nondeterminism
 and dynamic process creation in a manner that makes debugging hard.
@@ -42,23 +40,45 @@ Given the extent of lack of verification support, one of
 our priorities was to reuse as much of the existing Go infrastructure
 as we could.
 %
-For instance, we took Go's existing
-performance-oriented execution tracing facility called
-Execution Tracer (ET) and extended it to capture concurrency
-events, thus creating an {\em Execution Concurrency Tracer (ECT)}.
+The static analysis component relies on source rewriting, inserting
+{\em potential} schedule yield points 
+at all
+``interesting'' (concurrency-relevant) spots inside a given Go program.
 %
-We used the {\em yield} mechanisms that Go provides to build
-our own controllable schedule yielding methods.
+The dynamic component consists of yielding control back
+to the Go runtime with a user-settable probability value.
+
+
+Our preliminary results in terms of this combined static/dynamic
+approach yielded encouraging results.
 %
-Finally, we also took advantage of the existing source rewriting
-methods in Go to implant potential schedule yield points at all
-``interesting'' (concurrency-relevant) spots inside a Go program.
+However, bug-hunting on curated bug data sets do not give any
+indications on how well this approach can {\em generalize}.
+%
+Generalization in terms of debugging tools is often achieved
+by carefully defining {\em coverage metrics} and showing how
+well these metrics are met.
+%
+Again, we walked into a field with very few such coverage metrics.
+
+
+Our design of coverage metrics proceeded
+by observing the preponderance
+of reported Go bugs in recent studies.
+%
+Informed by these studies,
+we define {\em coverage metrics} by reusing
+(and extending)
+well known concurrency metrics in related work.
+%
+We take advantage of our own tracing framework to
+tabulate and report on the achieved coverage metrics.
 %
 All this is offered via a new tool called GOAT (Go Analysis Tool)
-that forms the main topic of this paper.
+that we now describe, after introducing relevant features of Go
+itself.
 
-
-
+\noindent{\bf Features of Go:\/}
 Go \cite{go} is a statically typed language initially developed by Google and at present widely used by many.
 %
 It employs channel-based Hoare's Communicating Sequential Processes (CSP) \cite{hoare-csp78} semantics in its core and provides a productivity-enhancing environment for concurrent programming.
