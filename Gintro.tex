@@ -19,7 +19,8 @@ in this study we take the feature-rich language, namely Go,
 and research the extent to which a simple and well-known
 mechanism---namely {\em schedule manipulation}---can be used
 to find bugs.
-%
+
+
 Not only is Go gaining in acceptance in the Cloud community,
 it also involves shared memory, message passing, nondeterminism
 and dynamic process creation in a manner that makes debugging hard.
@@ -35,6 +36,26 @@ Combinations of Go's features are found in many other languages,
 making our study carry a broader degree of relevance
 to the HPC/Cloud ecosystem, in addition to providing an effective
 tool for Go itself.
+
+
+Given the extent of lack of verification support, one of
+our priorities was to reuse as much of the existing Go infrastructure
+as we could.
+%
+For instance, we took Go's existing
+performance-oriented execution tracing facility called
+Execution Tracer (ET) and extended it to capture concurrency
+events, thus creating an {\em Execution Concurrency Tracer (ECT)}.
+%
+We used the {\em yield} mechanisms that Go provides to build
+our own controllable schedule yielding methods.
+%
+Finally, we also took advantage of the existing source rewriting
+methods in Go to implant potential schedule yield points at all
+``interesting'' (concurrency-relevant) spots inside a Go program.
+%
+All this is offered via a new tool called GOAT (Go Analysis Tool)
+that forms the main topic of this paper.
 
 
 
