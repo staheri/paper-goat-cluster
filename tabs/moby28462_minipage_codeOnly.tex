@@ -2,7 +2,7 @@
 \begin{minipage}{.45\columnwidth}
 \begin{minted}
 [
-fontsize=\scriptsize,
+fontsize=\footnotesize,
 linenos=true,
 escapeinside=||,
 xleftmargin=2em,
@@ -12,23 +12,23 @@ breaklines
 package main
 import "sync"
 
-type Cont struct{ |\label{bugListing:containerType_start}|
+type Cont struct{|\label{bugListing:containerType_start}|
   sync.Mutex
   stop  chan struct{}
-} |\label{bugListing:containerType_end}|
+}|\label{bugListing:containerType_end}|
 
 func main() {
-  cnt := &Cont{ |\label{bugListing:container_create_start}|
-       stop:make(chan struct{})} |\label{bugListing:container_create_end}|
-  go Monitor(cnt) |\label{bugListing:main_go_monitor}|
-  go StatusChange(cnt) |\label{bugListing:main_go_statChange}|
+  cnt := &Cont{|\label{bugListing:container_create_start}|
+       stop:make(chan struct{})}|\label{bugListing:container_create_end}|
+  go Monitor(cnt)|\label{bugListing:main_go_monitor}|
+  go StatusChange(cnt)|\label{bugListing:main_go_statChange}|
 }
 \end{minted}
 \end{minipage}\hfill
 \begin{minipage}{.45\columnwidth}
 \begin{minted}
 [
-fontsize=\scriptsize,
+fontsize=\footnotesize,
 linenos=true,
 escapeinside=||,
 breaklines

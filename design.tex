@@ -15,7 +15,7 @@ An execution model from the interactions of processors, OS threads, goroutines, 
 %
 By enriching the tracer package with concurrency events, we place the missing pieces for human debuggers and analysis tools to automatically obtain comprehensive models from the dynamic concurrency behavior of programs with minimal overhead.
 %
-In the remainder of this section, first we describe the enhancement that we made to the tracer package to automatically obtain Execution Concurrency Trace (ECT) from program execution reflecting accurate behavior of Go concurrency primitives (section \ref{sec:ect}).
+In the remainder of this section, we briefly describe the enhancement that we made to the tracer package to automatically obtain Execution Concurrency Trace (ECT) from program execution reflecting accurate behavior of Go concurrency primitives in section \ref{sec:ect} (overhead and scalability report is available in \cite{ect-arxiv}).
 %
 Then in section \ref{sec:dld}, we explain how we exploit ECT contents for post-mortem debugging of the program.
 %
@@ -26,7 +26,7 @@ Sections \ref{sec:dl_instrument} and \ref{sec:dl_evaluation} provide more detail
 %
 
 
-\begin{table}[b]
+\begin{table}[]
     \centering
         \begin{tabular}{|l|l|}
         \hline
@@ -114,12 +114,12 @@ Such distinguishment between goroutines is essential to define the boundaries of
 
 
 \begin{figure}[]
-
-\includegraphics[width=0.9\linewidth]{figs/gtree.pdf}
+\centering
+\includegraphics[width=0.75\linewidth]{figs/gtree.pdf}
 %\includegraphics[]{figs/overview.png}
 %\includegraphics[]{figs/overv}
 \label{fig:gtree}
-\caption{Goroutine tree of leaky execution of listing \ref{listing:moby28462}}
+\caption{Goroutine tree of the leaky interleaving in listing \ref{listing:moby28462}}
 \end{figure}
 
 Upon program termination, we construct a goroutine tree (figure \ref{fig:gtree}) of application goroutines by replaying through the execution ECT.
@@ -159,14 +159,6 @@ Human debuggers can use such models to review program execution and compare thei
 Moreover, online or offline verifiers can take ECT as input and construct logical models to verify the program execution.
 %
 
-
-\begin{figure}[]
-\centering
-
-\includegraphics[width=0.6\linewidth]{figs/execVis.pdf}
-\caption{Execution visualization of leaky interleaving in \ref{listing:moby28462} by replaying ECT}
-\label{fig:execVis}
-\end{figure}
 
 \begin{figure}
 \centering
@@ -267,3 +259,13 @@ Additionally, to manipulate the native scheduler around CU points, we inject cal
   \caption{Distribution of required number of iterations to detect the bug for each tool}
   \label{fig:runs}
 \end{figure}
+
+
+\begin{table*}[]
+\caption{Detected bug for each blocking bug in }
+\centering
+\scalebox{0.8}{
+    \input{tabs/comparison}
+  }
+\label{tab:comarison}
+\end{table*}

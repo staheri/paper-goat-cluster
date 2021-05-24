@@ -5,54 +5,56 @@ To demonstrate that testing has been thorough, \textit{coverage metrics} are def
 Coverage metric for the set of testing executions $\mathcal{T}$ is a set of \textit{requirements} $\mathcal{R}$ that should get covered during testing iterations.
 %
 We say requirement $R_i$ is covered during testing iteration $t \in \mathcal{T}$ if we can correlate an \textit{action} during execution of $t$ to $R_i$.
-
+%
 For example, in \textit{statement coverage}, which is a widely-used metric in testing sequential software, $R$ is the set of source locations (file and line numbers) in the target program and $R_i$ is covered by test execution $t$ if the statement at location $R_i$ is executed in $t$.
-
+%
 The \textit{coverage percentage} of a test $\mathcal{T}$ is the ratio of requirements covered by at least one execution to the number of all requirements ($|R|$).
 
 As explained in section \ref{sec:related}, concurrent software testing frameworks perform testing iterations to explore the schedule-space to expose the bug.
 %
 Depending on the class of target bug, different coverage metrics are proposed and used for concurrent software testing.
 %
-\textit{Synchronization} coverage metrics such as blocking-blocked\cite{edelstein2003contest}, blocked-pair-follows \cite{trainin-followsCoverage-padtad09} and synchronization-pair \cite{hong-syncTesting-issta12} defined requirements to cover during testing for exposing blocking bugs (\eg deadlocks.)
+\textit{Synchronization} coverage metrics such as blocking-blocked\cite{edelstein2003contest}, blocked-pair-follows \cite{trainin-followsCoverage-padtad09} and synchronization-pair \cite{hong-syncTesting-issta12} defined requirements to cover during testing for exposing blocking bugs (\eg deadlocks).
 %
 %\textit{Memory access} coverage metrics such as PSet \cite{yu-pser-isca09} and def-use \cite{yang-defuse-issta98} focuses on data-access related bugs such as atomicity violation or data races.
 %
 \stcmtside{fix}
-For example, the synchronization coverage model in \cite{edelstein2003contest} defines blocking and blocked requirements per each synchronized block (\ie mutually exclusive).
+For example, the synchronization coverage model in \cite{edelstein2003contest} defines \textit{blocking} and \textit{blocked} requirements per each synchronized block (\ie mutually exclusive).
 %
 The purpose of this requirement is to check if a test can report when there is a lock contention for two or more threads entering a mutual exclusion section protected by a lock.
 %
-That is, thread A is either \textit{blocked} from entering the mutually exclusive section or is \textit{blocking} other threads (e.g., thread B) from entering the critical section by holding the lock.
+That is, thread A is either \textit{blocked} from entering the mutually exclusive section or \textit{blocking} other threads (e.g., thread B) from entering the critical section by holding the lock.
 %
 
-Proposed concurrency coverage metrics are mostly in the context of Java and C/Pthreads and are not directly applicable to languages Go as Go has different concurrncy primitives and semantics.
+Proposed concurrency coverage metrics are mostly in the context of Java and C/Pthreads and are not directly applicable to languages like Go as Go has different concurrncy primitives and semantics.
 %
 Bron et. al,\cite{bron-appSyncCov-ppopp05} enumerates four major characteristics for coverage metrics to gain acceptance:
 \begin{itemize}
   \item \textbf{Fixed model:} The metric should be well-understood by the developer or tester. A static model of requirements from target program should be constructed by instrumenting the source-code. The model should maintain covered requirements during testing executions.
-  \item \textbf{Coverable requirements:} Majority of reqiurements should be realistic enough to be coverable during testing. For a few that are not (due to technical limitations or program semantics), the devloper should be aware of the reason.
+  \item \textbf{Coverable and measurable requirements:} The absolute majority of reqiurements should be realistic enough to be \textit{coverable} during testing. For a few that are not coverable (due to program semantics) or not \textit{measurable} (because of technical limitations), the devloper should be aware of the reason.
   \item \textbf{Actions for uncovered requirements:} After testing terminates, every uncovered requirement should yield an action (\eg extending testing iterations or removing dead code from the program thus removing uncoverable requirements)
   \item \textbf{Coverage satisfaction:} Some action should be taken upon reaching a threshold of coverage percentage (e.g., testing phase termination when reaching 100\% statement coverage)
 \end{itemize}
 
-In addition to above, having an accurate and proper model of target bugs is important to define effective and practical coverage requirements.
+Defining a new coverage metric to satisfy above characteristics requires an accurate and proper mental model of target bugs.
 %
-With the help of Goat and ECT, we were able to thoroughly study the behavior of common bugs in real-world Go applications.
+Based on our observations from execution of Go applications, behavior of concurrency primitives and causes of bugs, we define a set of coverage requirements:
 %
-Based on our observations from execution of go applications, behavior of concurrency primitives and causes of bugs, we define a set of coverage metrics.
-%
-
-The Select-case statement is the major cause of rare bugs specific to Go. Multiple blocking actions (send/recv) might get blocked on a select statement. Once one or more becomes available, Go picks one “randomly”. A default case make select “unblocking”. When no blocking case is available, the default case let the goroutine to make progress. GOAT and ECT are capable of identifying the select statement behavior (e.g., which case have been selected in each execution of select).
-
-
-Below is the list of requirements that we have defined for concurrent Go:
 \begin{itemize}
-  \item \textbf{Req1 (Send/Recv):} \{\texttt{blocked}, \texttt{unblocking}, \texttt{NOP}\} -- Goroutine $G_1$ is \textit{blocked} on a channel send (receive) if the receiver (sender) goroutine $G_2$ is not ready or \textit{unblocking} the waiting receiver (sender) goroutine $G_2$. A channel send or receive might also be neither blocked nor blocking (NOP) for buffered channels.
+  \item \textbf{Req1 (Send/Recv):} \{\texttt{blocked}, \texttt{unblocking}, \texttt{NOP}\} -- Goroutine $G_1$ is \textit{blocked} on a channel send (receive) if the receiver (sender) goroutine $G_2$ is not ready or \textit{unblocking} the waiting receiver (sender) goroutine $G_2$. A channel send or receive might also be neither blocked nor unblocking (NOP) for buffered channels.
   \item \textbf{Req2 (Select-Case):} \{\texttt{blocked}, \texttt{unblocking}, \texttt{NOP}\} $\times$ \{\texttt{case}$_i$\} -- cases of select statements are channel sends and recives (or default case for non-blocking selects). For all select statements that has no default case, we obtain the cases of each select statement at runtime and maintain an instance of Req1 per case.
   \item \textbf{Req3 (Lock):} \{\texttt{blocked}, \texttt{blocking}\} -- Goroutine $G$ is either \textit{blocked} when locking a mutex because another goroutine has locked the mutex or \textit{blocking} other goroutines from acquiring the mutex lock.
-  \item \textbf{Req4 (Unblocking):} \{\texttt{unblocking},\texttt{NOP}\} -- The goroutine that is performing channel close, mutex unlock, conditional variable signal and broadCast, waitGroup done and non-blocking select case (send or receive) has two kinds of behavior. They either \textit{unblock} one or more waiting goroutines or has no effect (NOP).
+  \item \textbf{Req4 (Unblocking):} \{\texttt{unblocking}, \texttt{NOP}\} -- The goroutine that is performing channel close, mutex unlock, conditional variable signal and broadcast, waitGroup done and non-blocking select case (send or receive) has two kinds of behavior. They either \textit{unblock} one or more waiting goroutines or has no effect (NOP).
   \item \textbf{Req5-Go:} \{\texttt{NOP}\} -- We emit a NOP action for each goroutine creation to indicate that it is covered during testing.
+\end{itemize}
+
+
+These requirements are effective because with the help of \goat infrastructure, they satisfy the characteristics of an ``acceptable'' coverage metric:
+\begin{itemize}
+  \item A \textit{fixed concurrency model} from target application is statically obtained by identifying CU points.
+  \item We can measure whether the requirement has been covered by analyzing the test ECT. By maintaining a global data structure during execution of all $t \in \mathcal{T}$, we can evaluate the coverability of proposed requirements
+  \item Every uncovered requirement report something meaningful. For example, if a send is always performing as \textit{unblocking} and never as \textit{blocked}, which means that receiver of this send always performs receive before sender reaches its send statement. In other words, the receive action \textit{always happen-before} send action. Perhaps this pattern of communication is part of the program semantic and matches developer's expectations (e.g., a set of goroutines are listening on a channel to perform non-frequent requests). Otherwise, it reflects a bug or flaw in the program design.
+  \item Since \goat is able to detect occured blocking bugs and also maintain a global coverage model during testing iterations, testing phase can terminate either by detection of a bug or reaching a coverage percentage threshold.
 \end{itemize}
 
 
@@ -69,7 +71,7 @@ Below is the list of requirements that we have defined for concurrent Go:
 
 
 
-\textbf{Req5-Wait:} \{\texttt{blocked},\texttt{non-blocking}\} -- the goroutine that performs a conditional variable or waitGroup Wait is either blocked waiting for a wake-up signal from other goroutines or is non-blocking when
+%\textbf{Req5-Wait:} \{\texttt{blocked},\texttt{non-blocking}\} -- the goroutine that performs a conditional variable or waitGroup Wait is either blocked waiting for a wake-up signal from other goroutines or is non-blocking when
 
 \begin{figure}
 \centering
@@ -89,21 +91,24 @@ Below is the list of requirements that we have defined for concurrent Go:
   \item
 \end{itemize}
 
-
-\stcmt{Why I think this is good?}
-- It exploits the enhancement I made for Go tracer.
-- The proposed coverage model idea is strong because:
-- It follows the four rule of popular coverage metrics
-- It is based on a thorough study of GoKer bugs
-- I can generate a interesting tables to show the impact of the random scheduler-perturbations.
-- It is novel and adds some scientific aspect to my thesis.
-
 \subsection{Implementation}
-It is crucial to maintain a static model of goroutines and coverage metrics during testing executions. I obtain such model in two ways:
--	Statically: The concurrency usage (ie, source line numbers that perform actions go/send/recv/lock/unlock/wait/done/sig/bcast/select) is obtained from traversing the source AST. Such concurrency usage model has two purposes:
-- Critical points to inject sched\_yield before them.
-- A pre-execution model of testing tasks. During testing phase, we map each source line with its corresponding action to an event in ECT based on its call-stack.
--	Dynamically: A good test run is required to obtain some models dynamically. (I will explain GGTree and stack later. Why do we need GGTree?)
+Through a replay (\ie parsing the sequence) of ECT, a mapping between dynamic concurrent events and statically obtained CU points is emited by matching their respective call-stack and CU source location.
+%
+Through a BFS traversal of the goroutine tree, we add a \textit{coverage vector} to each goroutine node from the emitted mapping. Each element $cv_i$ of the coverage vector is the respective covered value of requirement $R_i$ for the current goroutine node.
+%
+During executions of tests $t \in \mathcal{T}$, we maintain and update a global goroutine tree after each $t$.
+%
+Two goroutines $G_m$ and $G_n$ in the tests $t_i$ and $t_j$ are \textit{equivalent} (\ie falls into identical node in the GGTree) if their parents are equivalent and their creation source location (CU of kine \texttt{go}) are identical:
+\begin{equation}
+  G_m \equiv G_n   \text{if}
+  \begin{cases}
+    \text{parent}(G_m) \equiv \text{parent}(G_n)  \wedge \\
+    \text{CU(}G_m\text{).file} = \text{CU(}G_n\text{).file}  \wedge\\
+    \text{CU(}G_m\text{).line} = \text{CU(}G_n\text{).line} \\
+  \end{cases}
+\end{equation}
+
+
 
 
 \subsection{Evaluation}
