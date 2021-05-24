@@ -6,6 +6,7 @@ Points to make in various sections:
 * Intro
   - start higher level
   - emphasize relevance to HPC and CLoud integration etc
+  - Why 'go' is interesting/challenging
   - emphasize 'simple is better'
     > delay-bounding is simple
     > can it work?
@@ -16,5 +17,53 @@ Points to make in various sections:
       = tomorrow's bugs
         * coverage goals?
         * coverage goals met?
+  - contributions	
+
+* Background, Related Work
+
+* Overview of GOAT's approach
+
+  - Extending ET to ECT
+  - Deadlock
+  - Accel bug
+  - Instrumentation
+  - Eval on today's bugs
+
+* Coverage
+  - results
+
+* Conc
+
+==
+What is X in the big table?
+
+ 
+
+X(i) means that the tool is unable to detect the bug after i-th times.
+
+ 
+
+How can we justify that GoodLock etc cannot deduce deadlocks in Go?
+
+ 
+
+Because according to the table and other evidences, causes of deadlocks are not only locks. A deadlock might happen because of misuse of channels and waitgroups. Goolock is only able to detect lock-based deadlocks. For example, the studied tool LockDL is based on Goodlock that keeps track of acquired locks per goroutine and throws a warning if it finds a circular wait. However, it only works for AB-BA lock-based deadlocks and maybe miss detecting RWRLock-based deadlocks.
+
+ 
+
+How do we flow the paper distilling the main points?
+
+ 
+
+Go is modern à correctness is challenging because of new concepts that it introduces à limited tooling and high desire for correctness in Go à Dynamic tracing to automatically collect information and gain insight into the dyanamic behavior à use collected traces for creating execution models (goroutine tree) and identify leaked goroutines à perturb the scheduler around critical points to trigger the bugs that require more than one executions to occur à define a coverage metric to measure the quality of tests and effectiveness of our idea (perturbing the scheduler)
+
+ 
+
+ 
+
+ 
+
+Please let me know if you have any other question. I can video chat with you and explain any of the above.
 
 
+==

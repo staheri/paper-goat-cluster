@@ -1,0 +1,55 @@
+Go comes with a few dynamic tools for analysis and debugging its programs.
+%
+For example, the \textit{race detector} \cite{go-race-blog} which is basically a wrapper around ThreadSanitizer \cite{konstantin-tsan-wbia09}, tracks memory accesses and detect races that happened during execution.
+%
+A few other facilities for code coverage measurement, profiling, and tracing are provided to deliver insight into the testing quality and performance behavior.
+%
+However, there is still a considerable gap for debugging concurrency.
+%
+Several research groups have recently proposed and developed a range of \textit{static} (source-level) or \textit{dynamic} (execution-level) theories and tools towards filling this gap.
+%
+Ng and Yoshida \cite{ng-dl-cc16} first proposed a static tool to detect global deadlock in Go programs using choreography synthesis.
+%
+Later, Stadtmuller et al. \cite{stadtmuller-minigo-aplas16} proposed a static trace-based global detection approach based on forkable regular expressions.
+%
+Lange et al. proposed more static verification frameworks for checking channel safety, and liveness \cite{lange-fence-popl17}, and behavioral model checking \cite{lange-staticType-icse18}.
+%
+Both methods approximate Go programs with session types and behavioral contracts extracted from their SSA intermediate representation.
+%
+The mentioned work has limitations for handling dynamic (e.g., in-loop) goroutine or channel creation.
+%
+They also do not scale and are impractical in real-world programs due to the state explosion problem.
+%
+Besides, similar to other static analysis methods, they often suffer from false positives due to conservative constraints.
+
+%
+Zhao et al. \cite{zhao-occam97} introduced a runtime monitoring approach for deadlock detection for Occam based on wait-for graphs and some heuristics. Occam is a concurrent language based on CSP semantics, and similar to Go, it uses channels to establish communication between processes.
+%
+Sulzmann and Stadtmuller proposed a dynamic verification approach for synchronous (unbuffered) channels \cite{sulzmann-corr17}, and a vector-clock-based approach for asynchronous channels \cite{sulzmann-twophase-2018}.
+%
+Both approaches require heavy code instrumentation and replay of collected traces.
+%
+Although they may support a larger subset of the Go language, they only focus on channels as the root cause of deadlocks and evaluated only on relatively small examples.
+%
+Generally, dynamic analyzers are not \textit{sound} meaning that they are only able to catch occurred bugs and might miss potential unhappened bugs.
+
+%\cite{dilley-gomela-corr2020}
+%
+
+Systematic testing combines ideas from static and dynamic approaches to reduce the state space and reflect realistic behavior.
+%
+Assuming the scheduler causes concurrency bugs (and not the program input), they may not manifest during conventional testing and difficult to reproduce, both due to non-deterministic decisions that the scheduler makes.
+%
+Stress testing the scheduler to examine possible interleaving is useful to expose hidden bugs, but they are exponentially expensive relative to the number of concurrent units.
+%
+Researchers have applied different methods \cite{thomson-concurrencyTesting-ppopp14} to reduce the interleaving space to explore effectively and efficiently.
+%
+Delay-bounded \cite{emmi-delayBounded-popl11,burckhardt-depthBug-asplos10} and preemption-bounded \cite{madanlal-preemptionBound-pldi07} techniques systematically ``fuzz'' the scheduler to equally and fairly cover feasible interleaving.
+%
+Other tools like Maple \cite{yu-maple-oopsla12}, CalFuzzer \cite{joshi-calfuzzer},  and ConTest \cite{contest-jgi01,edelstein2003contest} \textit{actively} control the scheduler to maximise a pre-defined concurrency coverage criterion \cite{hong-syncTesting-issta12} or the probability of bug exposure \cite{burckhardt-depthBug-asplos10}.
+
+Adopting ideas from existing concurrency testing tools, we systematically navigate the scheduler towards executing likely-erroneous interleaving.
+%
+We first identify the usage of concurrency primitives (\textit{critical points}) in the program using a tracing mechanism.
+%
+We automatically inject random delays around the critical points to increase the probability of bug exposure (more in section \ref{sec:design}).
