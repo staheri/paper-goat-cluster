@@ -1,5 +1,5 @@
-\begin{listing}[]
-\centering
+\begin{listing*}[]
+\begin{minipage}{.35\textwidth}
 \begin{minted}
 [
 fontsize=\scriptsize,
@@ -22,10 +22,20 @@ func main() {
   go Monitor(container) |\label{bugListing:main_go_monitor}|
   go StatusChange(container) |\label{bugListing:main_go_statChange}|
 }
-%|\setcounter{FancyVerbLine}{15}|func Monitor(cnt *Container){
-func Monitor(cnt *Container){
+\end{minted}
+\end{minipage}
+\begin{minipage}{.35\textwidth}
+\begin{minted}
+[
+fontsize=\scriptsize,
+linenos=true,
+escapeinside=||,
+breaklines
+]
+{go}
+|\setcounter{FancyVerbLine}{15}|func Monitor(cnt *Container){
   for{
-    select{
+    select{|\label{bugListing:Monitor_select}|
     case <- cnt.stop:  |\label{bugListing:Monitor_case_recv}|
       return |\label{bugListing:Monitor_case_recv_ret}|
     default: |\label{bugListing:Monitor_case_def}|
@@ -34,10 +44,15 @@ func Monitor(cnt *Container){
 }}}
 func StatusChange(cnt *Container){
   cnt.Lock() |\label{bugListing:statChange_lock}|
+  defer cnt.Unlock() |\label{bugListing:statChange_defer_unlock}|
   cnt.stop <- struct{}{} |\label{bugListing:statChange_send}|
-  cnt.Unlock() |\label{bugListing:statChange_defer_unlock}|
 }
 \end{minted}
+\end{minipage}
+\begin{minipage}{.29\textwidth}
+  \centering
+  \includegraphics[width=.99\linewidth]{figs/execViz_moby.pdf}
+\end{minipage}
 \caption{Simplified version of bug \texttt{moby28462}}
 \label{listing:moby28462}
-\end{listing}
+\end{listing*}

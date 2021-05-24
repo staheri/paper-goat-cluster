@@ -1457,26 +1457,6 @@ month={Nov},}
 }
 
 
-@inproceedings{parlot,
-  author    = {Saeed Taheri and
-               Sindhu Devale and
-               Ganesh Gopalakrishnan and
-               Martin Burtscher},
-  title     = {Par{LOT}: Efficient Whole-Program Call Tracing for {HPC} Applications},
-  booktitle = {Programming and Performance Visualization Tools - International Workshops,
-               {ESPT} 2017 and {VPA} 2017, Denver, CO, USA, November 12 and 17, 2017,
-               and {ESPT} 2018 and {VPA} 2018, Dallas, TX, USA, November 16 and 11,
-               2018, Revised Selected Papers},
-  pages     = {162--184},
-  year      = {2018},
-  url       = {https://doi.org/10.1007/978-3-030-17872-7\_10},
-  doi       = {10.1007/978-3-030-17872-7\_10},
-  timestamp = {Wed, 24 Apr 2019 14:34:48 +0200},
-  biburl    = {https://dblp.org/rec/bib/conf/sc/TaheriDGB18},
-  bibsource = {dblp computer science bibliography, https://dblp.org}
-}
-
-
 @article{beschastnikh-2016,
  author = {Beschastnikh, Ivan and Wang, Patty and Brun, Yuriy and Ernst, Michael D.},
  title = {Debugging Distributed Systems},
@@ -2478,7 +2458,7 @@ series = {USENIX'93}
 
 
 @misc{go-netDeadlock,
-title={go 1.5.1 linux/amd64 deadlock detection failed #12734},
+title={go 1.5.1 linux/amd64 deadlock detection failed -12734},
 url={https://github.com/golang/go/issues/12734},
 }
 
@@ -2495,8 +2475,84 @@ url={https://github.com/staheri/ECT},
 
 
 @INPROCEEDINGS{yuan-gobench-cgo21,
-author={Ting Yuan and Guangwei Li and Jie Lu and Chen Liu and Lian Li and and Jingling Xue},
-booktitle={CGO 2021: Proceedings of the 19th ACM/IEEE International Symposium on Code Generation and Optimization},
-title={GoBench: A Benchmark Suite of Real-World Go Concurrency Bugs},
-year={2021},
+  author={Yuan, Ting and Li, Guangwei and Lu, Jie and Liu, Chen and Li, Lian and Xue, Jingling},
+  booktitle={2021 IEEE/ACM International Symposium on Code Generation and Optimization (CGO)},
+  title={GoBench: A Benchmark Suite of Real-World Go Concurrency Bugs},
+  year={2021},
+  volume={},
+  number={},
+  pages={187-199},
+  doi={10.1109/CGO51591.2021.9370317}}
+
+@inproceedings{trainin-followsCoverage-padtad09,
+author = {Trainin, Ehud and Nir-Buchbinder, Yarden and Tzoref-Brill, Rachel and Zlotnick, Aviad and Ur, Shmuel and Farchi, Eitan},
+title = {Forcing Small Models of Conditions on Program Interleaving for Detection of Concurrent Bugs},
+year = {2009},
+isbn = {9781605586557},
+publisher = {Association for Computing Machinery},
+address = {New York, NY, USA},
+url = {https://doi.org/10.1145/1639622.1639629},
+doi = {10.1145/1639622.1639629},
+booktitle = {Proceedings of the 7th Workshop on Parallel and Distributed Systems: Testing, Analysis, and Debugging},
+articleno = {7},
+numpages = {6},
+keywords = {dynamic exploration, concurrency bug patterns, model of conditions on program interleaving, analysis, forcing algorithm},
+location = {Chicago, Illinois},
+series = {PADTAD '09}
+}
+
+
+@inproceedings{bron-appSyncCov-ppopp05,
+author = {Bron, Arkady and Farchi, Eitan and Magid, Yonit and Nir, Yarden and Ur, Shmuel},
+title = {Applications of Synchronization Coverage},
+year = {2005},
+isbn = {1595930809},
+publisher = {Association for Computing Machinery},
+address = {New York, NY, USA},
+url = {https://doi.org/10.1145/1065944.1065972},
+doi = {10.1145/1065944.1065972},
+booktitle = {Proceedings of the Tenth ACM SIGPLAN Symposium on Principles and Practice of Parallel Programming},
+pages = {206–212},
+numpages = {7},
+keywords = {multi-threading, testing, coverage},
+location = {Chicago, IL, USA},
+series = {PPoPP '05}
+}
+
+
+
+@inproceedings{yu-pser-isca09,
+author = {Yu, Jie and Narayanasamy, Satish},
+title = {A Case for an Interleaving Constrained Shared-Memory Multi-Processor},
+year = {2009},
+isbn = {9781605585260},
+publisher = {Association for Computing Machinery},
+address = {New York, NY, USA},
+url = {https://doi.org/10.1145/1555754.1555796},
+doi = {10.1145/1555754.1555796},
+abstract = {Shared-memory multi-threaded programming is inherently more difficult than single-threaded programming. The main source of complexity is that, the threads of an application can interleave in so many different ways. To ensure correctness, a programmer has to test all possible thread interleavings, which, however, is impractical.Many rare thread interleavings remain untested in production systems, and they are the root cause for a majority of concurrency bugs. We propose a shared-memory multi-processor design that avoids untested interleavings to improve the correctness of a multi-threaded program. Since untested interleavings tend to occur infrequently at runtime, the performance cost of avoiding them is not high.We propose to encode the set of tested correct interleavings in a program's binary executable using Predecessor Set (PSet) constraints. These constraints are efficiently enforced at runtime using processor support, which ensures that the runtime follows a tested interleaving. We analyze several bugs in open source applications such as MySQL, Apache, Mozilla, etc., and show that, by enforcing PSet constraints, we can avoid not only data races and atomicity violations, but also other forms of concurrency bugs.},
+booktitle = {Proceedings of the 36th Annual International Symposium on Computer Architecture},
+pages = {325–336},
+numpages = {12},
+keywords = {parallel programming, software reliability, concurrency bugs, multiprocessors},
+location = {Austin, TX, USA},
+series = {ISCA '09}
+}
+
+
+@inproceedings{yang-defuse-issta98,
+author = {Yang, Cheer-Sun D. and Souter, Amie L. and Pollock, Lori L.},
+title = {All-Du-Path Coverage for Parallel Programs},
+year = {1998},
+isbn = {0897919718},
+publisher = {Association for Computing Machinery},
+address = {New York, NY, USA},
+url = {https://doi.org/10.1145/271771.271804},
+doi = {10.1145/271771.271804},
+booktitle = {Proceedings of the 1998 ACM SIGSOFT International Symposium on Software Testing and Analysis},
+pages = {153–162},
+numpages = {10},
+keywords = {testing tool, all-du-path coverage, parallel programming},
+location = {Clearwater Beach, Florida, USA},
+series = {ISSTA '98}
 }

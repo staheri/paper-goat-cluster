@@ -1,7 +1,98 @@
+Based on a proposed bug taxonomy for Go \cite{tu-concurrentBugs-asplos19}, bugs are categorized separately based on their \textit{causes} (shared-memory vs. message-passing) and \textit{symptoms} (blocking vs. non-blocking).
+%
+Blocking bugs historically refer to situations where one or more processing units (\eg goroutines) are blocked, waiting for an external signal to resume (\ie deadlocks).
+%
+As mentioned in section \ref{sec:bg}, the built-in deadlock detector (if not disabled \cite{go-netDeadlock}) only detects global deadlocks where the main goroutine is blocked and ignores other goroutines' states. For instance, more than 70\% of blocking bugs (partial deadlocks and leaks) in GoKer \cite{GoKer} are not detectable by the built-in deadlock detector.
+%
+
+As we have shown in our previous work \cite{parlot,difftrace}, dynamic tracing is an effective way in debugging large-scale applications.
+%
+We found that Go execution tracer \cite{go-cmd-trace} gives detailed information about the \textit{performance} behavior during execution.
+%
+Its tracing capability is compiled into all programs always through the runtime and is enabled on demand -- when tracing is disabled, it has minimal runtime overhead \cite{go-exec-tracer-doc}.
+%
+An execution model from the interactions of processors, OS threads, goroutines, the scheduler, and the garbage collection mechanism is constructible from the trace to identify poor parallelization and resource contention.
+%
+By enriching the tracer package with concurrency events, we place the missing pieces for human debuggers and analysis tools to automatically obtain comprehensive models from the dynamic concurrency behavior of programs with minimal overhead.
+%
+In the remainder of this section, first we describe the enhancement that we made to the tracer package to automatically obtain Execution Concurrency Trace (ECT) from program execution reflecting accurate behavior of Go concurrency primitives (section \ref{sec:ect}).
+%
+Then in section \ref{sec:dld}, we explain how we exploit ECT contents for post-mortem debugging of the program.
+%
+Sections \ref{sec:dl_instrument} and \ref{sec:dl_evaluation} provide more details on implementation and evaluation of deadlock detection using program ECT.
+
+
+
+%
+
+
+\begin{table}[b]
+    \centering
+        \begin{tabular}{|l|l|}
+        \hline
+        \rowcolor[HTML]{C0C0C0}
+        \multicolumn{1}{|c|}{\cellcolor[HTML]{C0C0C0}\textbf{Category}} & \multicolumn{1}{c|}{\cellcolor[HTML]{C0C0C0}\textbf{Description}} \\ \hline
+        Process & Indication of process/thread start and stop \\ \hline
+        GC/Mem & Garbage collection and memory operation events\\ \hline
+        Goroutine & Goroutines events: create, block, start, stop, end, etc. \\ \hline
+        Syscall & Interactions with system calls \\ \hline
+        Users & User annotated regions and tasks (for bounded tracing) \\ \hline
+        Misc & System related events like futile wakeup or timers \\ \hline
+        \end{tabular}
+
+    \caption{Event categories by the Go execution tracer}
+    \label{tab:events}
+\end{table}
+
+
+
+
+\subsection{Execution Concurrency Tracing (ECT)}
+\label{sec:ect}
+%\stcmtside{why we need to mutate ET to ECT}
+According to \cite{tu-concurrentBugs-asplos19,yuan-gobench-cgo21}, the primary cause of most real-world bugs is the misuse of concurrency features like channels, mutexes, and waitGroups.
+%
+However, the standard tracer package does not capture concurrency primitive usage events as it aims more on performance bugs.
+%
+Although the event vocabulary is rich enough to model comprehensive goroutine latency and blocking behavior accurately, the tracer package cannot answer questions such as do the synchronization constructs work as expected? In the leaky interleaving of listing \ref{listing:moby28462}, which goroutine is holding the lock that \texttt{Monitor} tends to acquire? What are the resources that contribute to this circular wait? In the successful interleaving of listing \ref{listing:moby28462}, is there any \textit{potential flaw} that did not manifest?
+
+%
+%\stcmtside{why we think dynamic tracing is effective}
+As we mentioned earlier, dynamic tracing provides a practical and uniform way to answer the above debugging questions and track multiple program facets during execution.
+%
+In the context of Go, we implemented a framework that automatically captures dynamic concurrency behavior exploiting an enhancement to the tracer package.
+%
+We chose the tracer package to enhance because it 1) is already compiled into the runtime, 2) adds minimal overhead, and 3) only lacks some pieces allowing the construction of an accurate concurrency model.
+%
+
+When enabled, the execution tracer package from the standard Go captures and compresses an \textit{execution concurrency trace} (ECT).
+%
+Upon program termination, the ECT is flushed to an IO buffer.
+%
+The decompressed ECT is a totally ordered \textit{sequence} of events in which the order is approximated through a central clock with nanosecond precision.
+%
+ECT also contains the call-stack for each event enabling a direct mapping of events to source-line numbers.
+%
+The alphabet of ECT is total of 64 events -- 49 from original tracer package \cite{goParserSource}, categorized and summarized in table \ref{tab:events} and 13 additional events that we added to capture concurrency usage events:
+%
+\begin{itemize}
+    \item \textbf{Channel:} For each channel operation (make, send, receive, close), ECT includes an event with a unique id assigned to each channel.
+    \item \textbf{Mutex, WaitGroup \& Conditional Variables:} Similar to channels, we assign a unique id to each concurrency object and emit an event for each of their operations (lock, unlock, add, wait, signal, broadcast).
+    \item \textbf{Select \& Schedule:} The scheduler and the \textit{select} structure introduce non-determinism to the execution. We keep track of the decisions made by the scheduler and select statements to obtain an accurate decision path during execution.
+\end{itemize}
+
+%\stcmtside{how ECT captures concurrency blocking behavior}
+Blocking concurrency operations such as channels \textit{sends}/\textit{recvs}, mutex \textit{locks}, waitGroup/conditional variable \textit{wait} and \textit{select} (when none of the cases are available) prevents the executor goroutine from making progress.
+%
+For each blocking operation, ECT captures a pair of pre-operation and post-operation events (yellow and green boxes respectively).
+%
+Hence, ECT enables concurrency state modeling at any given step of execution.
+%
+
 \subsection{Deadlock Detection}
 \label{sec:dld}
 We take advantage of the rich collection of information about the dynamic behavior of within ECT to automatically identify whether one or more goroutines have been leaked after program termination.
-
+%
 Upon program termination, we construct a goroutine tree (figure \ref{fig:gtree}) of application goroutines by replaying through the execution ECT.
 %
 In the goroutine tree, parents are the goroutines that children are created from within them. Each node of the tree contains information about the goroutine creation site, the resources that it holds at each execution point and the final executed event right before program termination.
@@ -130,14 +221,27 @@ CU points are passed to the instrumentation phase of \goat to inject scheduler p
 \subsection{Instrumentation}
 \label{sec:instrument}
 \stcmt{below is the raw text that I wrote for instrumentation. I will complete it}
-We equip target applications with \goat functionalities by automatically injecting
-Identifying “critical points”:
-Instrumentation: goat inject goat\_handler() calls before the critical point nodes. Goat\_handler() can be a call to any desired scheduler-manipulator. For instance, currently it calls an external function that randomly and boundedly yield to all other runnable goroutines (i.e., call gosched()). It gives us the flexibility to experiment different kinds of random and systematic (e.g., coverage-guided) scheduler-manipulation from an external function and environment variables without touching goat or goatlib API. In addition to critical points, goat adds four more line to the beginning of main function:
-Import goat
-goat\_done := goat.Start() // Start() initializes goat and starts tracing. It also creates and returns a channel for signaling the Stop()
-go goat.Watch(goat\_done) // spawns a new goroutine as a watcher for liveness of the program (in case of global deadlocks or infinite loop). Watch() either receives from done and performs : goat\_done <- true, or timeouts and stop tracing, and terminates.
-defer goat.Stop(goat\_done) // after the main ends, Stop() is called to send a value to the watcher goroutine and signaling that the program is finished. Then it waits to receive the ack from watcher, then stops tracing and terminates.
-Trace collection: Currently, goat can collect a plain ECT from the native execution and also ECTs from executions with manipulated scheduler.
+To equip the target application with concurrency tracing mechanism, we automatically inject three lines of code to the beginning of main or test function using AST package \cite{go-package-ast}:
+
+\begin{itemize}
+  \item \texttt{goat\_done := goat.Start()} initilizes \goat, enables tracing, and returns a channel as conduit between application space and \goat API.
+  \item \texttt{go goat.Watch(goat\_done)} spawns a new goroutine as a watcher for liveness of the program (in case of global deadlocks or infinite loop). The watcher goroutine either receives from \texttt{goat\_done} and sends back an ack signal, or timeouts and stop tracing, and terminates.
+  \item \texttt{defer goat.Stop(goat\_done)} sends a value to the watcher goroutine after main returns and signals that the program is finished. Then it waits to receive the signal from watcher, then stops tracing and terminates.
+\end{itemize}
+
+Additionally, to manipulate the native scheduler around CU points, we inject calls to \texttt{goat.handler()} before each statically discovered CU. \texttt{goat.handler()} randomly calls \texttt{runtime.GoSched()} to preempt the processing core from current goroutine and push the goroutine to the back of the global queue.
+
+
+
+\begin{table}[]
+\centering
+\caption{Concurrency Usages and coverage requirements of program in listing\ref{listing:moby28462}}
+\scalebox{0.9}{
+\input{tabs/moby_coverage_table}
+}
+\label{tab:moby_cov_table}
+\end{table}
+
 
 \subsection{Evaluation}
 

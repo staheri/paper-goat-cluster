@@ -23,7 +23,16 @@ Go introduces a new concurrency model, mixing shared-memory and message-passing 
 %
 }
 
-\input{tabs/moby28462}
+%\input{tabs/moby28462}
+\input{tabs/moby28462_minipage}
+%\input{tabs/moby28462_minipage_codeOnly}
+
+%\begin{figure}
+%\centering
+%\includegraphics[width=.99\linewidth]{figs/execViz_moby.pdf}
+%  \caption{Moby}
+%  \label{fig:rare_bugs}
+%\end{figure}
 
 %\stcmtside{Explaining the example to motivate}
 Listing \ref{listing:moby28462} shows a simplified version of a reported bug in Docker \cite{moby-28462-commit}.
@@ -94,43 +103,11 @@ Profilers \cite{go-profile-blog} give up some accuracy by approximating the dyna
 while distributed (decentralized) tracing systems \cite{dapper} gather logs and information (\eg HTTP request latency) through source instrumentation and an underlying network.
 %
 
-\stcmtside{why we picked execution tracer}
-We found that Go execution tracer \cite{go-cmd-trace} gives detailed information about the \textit{performance} behavior during execution.
-%
-Its tracing capability is compiled into all programs always through the runtime and is enabled on demand -- when tracing is disabled, it has minimal runtime overhead \cite{go-exec-tracer-doc}.
-%
-An execution model from the interactions of processors, OS threads, goroutines, the scheduler, and the garbage collection mechanism is constructible from the trace to identify poor parallelization and resource contention.
-%
-By enriching the tracer package with concurrency events, we place the missing pieces for human debuggers and analysis tools to automatically obtain comprehensive models from the dynamic concurrency behavior of programs with minimal overhead.
 %
 
-\begin{table}[b]
-    \centering
-        \begin{tabular}{|l|l|}
-        \hline
-        \rowcolor[HTML]{C0C0C0}
-        \multicolumn{1}{|c|}{\cellcolor[HTML]{C0C0C0}\textbf{Category}} & \multicolumn{1}{c|}{\cellcolor[HTML]{C0C0C0}\textbf{Description}} \\ \hline
-        Process & Indication of process/thread start and stop \\ \hline
-        GC/Mem & Garbage collection and memory operation events\\ \hline
-        Goroutine & Goroutines events: create, block, start, stop, end, etc. \\ \hline
-        Syscall & Interactions with system calls \\ \hline
-        Users & User annotated regions and tasks (for bounded tracing) \\ \hline
-        Misc & System related events like futile wakeup or timers \\ \hline
-        \end{tabular}
-
-    \caption{Event categories by the Go execution tracer}
-    \label{tab:events}
-\end{table}
 
 
-\begin{table}[]
-\centering
-\caption{Concurrency Usages and coverage requirements of program in listing\ref{listing:moby28462}}
-\scalebox{0.9}{
-\input{tabs/moby_coverage_table}
-}
-\label{tab:moby_cov_table}
-\end{table}
+
 
 \stcmtside{Points that I want to make in the rest of background is bulleted}
 \subsection{Rest of Background}
@@ -147,25 +124,3 @@ By enriching the tracer package with concurrency events, we place the missing pi
   \item \textbf{\goat accelerates bug exposure by manipulating the scheduler around critical points}
   \item \textbf{background for coverage}
 \end{itemize}
-
-
-
-
-
-
-
-\ignore{Based on a proposed bug taxonomy for Go \cite{tu-concurrentBugs-asplos19}, bugs are categorized separately based on their \textit{causes} (shared-memory vs. message-passing) and \textit{symptoms} (blocking vs. non-blocking).
-%
-Go inherited traditional non-blocking bugs such as data races and atomicity violations from older concurrent languages while introducing new bug idioms due to its modern concepts.
-%
-Blocking bugs historically refer to situations where one or more processing units (\eg goroutines) are blocked, waiting for an external signal to resume.
-%
-However, since there is no constraint for a goroutine to join the \texttt{main} goroutine before the program terminates, goroutines are often \textit{leaked} (aka \textit{partial deadlock}) after the \texttt{main} goroutine terminates.
-%
-The built-in deadlock detector in Go (if not disabled \cite{go-netDeadlock}) only detects situations where there is no \textit{runnable} goroutine in the scheduler's queues (aka \textit{global deadlock}).
-%
-Since goroutines are naturally light-weight, such leak situations usually go unnoticed by developers.
-%
-Correctness analysis tools are essential to detect, predict and avoid such flaws in Go programs.
-%
-}

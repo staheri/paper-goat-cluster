@@ -1,5 +1,31 @@
 \begin{listing}[]
-\centering
+\begin{minipage}{.45\columnwidth}
+\begin{minted}
+[
+fontsize=\scriptsize,
+linenos=true,
+escapeinside=||,
+xleftmargin=2em,
+breaklines
+]
+{go}
+package main
+import "sync"
+
+type Cont struct{ |\label{bugListing:containerType_start}|
+  sync.Mutex
+  stop  chan struct{}
+} |\label{bugListing:containerType_end}|
+
+func main() {
+  cnt := &Cont{ |\label{bugListing:container_create_start}|
+       stop:make(chan struct{})} |\label{bugListing:container_create_end}|
+  go Monitor(cnt) |\label{bugListing:main_go_monitor}|
+  go StatusChange(cnt) |\label{bugListing:main_go_statChange}|
+}
+\end{minted}
+\end{minipage}\hfill
+\begin{minipage}{.45\columnwidth}
 \begin{minted}
 [
 fontsize=\scriptsize,
@@ -8,22 +34,7 @@ escapeinside=||,
 breaklines
 ]
 {go}
-package main
-import "sync"
-
-type Container struct{ |\label{bugListing:containerType_start}|
-  sync.Mutex
-  stop  chan struct{}
-} |\label{bugListing:containerType_end}|
-
-func main() {
-  container := &Container{ |\label{bugListing:container_create_start}|
-       stop:make(chan struct{})} |\label{bugListing:container_create_end}|
-  go Monitor(container) |\label{bugListing:main_go_monitor}|
-  go StatusChange(container) |\label{bugListing:main_go_statChange}|
-}
-%|\setcounter{FancyVerbLine}{15}|func Monitor(cnt *Container){
-func Monitor(cnt *Container){
+|\setcounter{FancyVerbLine}{15}|func Monitor(cnt *Cont){
   for{
     select{
     case <- cnt.stop:  |\label{bugListing:Monitor_case_recv}|
@@ -32,12 +43,13 @@ func Monitor(cnt *Container){
       cnt.Lock()  |\label{bugListing:Monitor_case_def_lock}|
       cnt.Unlock() |\label{bugListing:Monitor_case_def_unlock}|
 }}}
-func StatusChange(cnt *Container){
+func StatusChange(cnt *Cont){
   cnt.Lock() |\label{bugListing:statChange_lock}|
+  defer cnt.Unlock() |\label{bugListing:statChange_defer_unlock}|
   cnt.stop <- struct{}{} |\label{bugListing:statChange_send}|
-  cnt.Unlock() |\label{bugListing:statChange_defer_unlock}|
 }
 \end{minted}
+\end{minipage}
 \caption{Simplified version of bug \texttt{moby28462}}
 \label{listing:moby28462}
 \end{listing}

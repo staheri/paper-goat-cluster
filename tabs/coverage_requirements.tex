@@ -1,0 +1,22 @@
+\begin{tabular}{|
+>{\columncolor[HTML]{FFFFFF}}c |
+>{\columncolor[HTML]{FFFFFF}}l |
+>{\columncolor[HTML]{FFFFFF}}c |
+>{\columncolor[HTML]{FFFFFF}}c |
+>{\columncolor[HTML]{FFFFFF}}c |
+>{\columncolor[HTML]{FFFFFF}}c |}
+\hline
+\cellcolor[HTML]{FFFFFF} & \multicolumn{1}{c|}{\cellcolor[HTML]{FFFFFF}} & \multicolumn{4}{c|}{\cellcolor[HTML]{FFFFFF}Coverage Requirement Types} \\ \cline{3-6}
+\multirow{-2}{*}{\cellcolor[HTML]{FFFFFF}\begin{tabular}[c]{@{}c@{}}Coverage\\ Requirements\end{tabular}} & \multicolumn{1}{c|}{\multirow{-2}{*}{\cellcolor[HTML]{FFFFFF}\begin{tabular}[c]{@{}c@{}}Concurrent\\ Action\end{tabular}}} & Blocked & Unblocking & Blocking & NOP \\ \hline \hline
+\cellcolor[HTML]{FFFFFF} & SEND & * & * &  & * \\ \cline{2-6}
+\multirow{-2}{*}{\cellcolor[HTML]{FFFFFF}Req1: Send/Recv} & RECV & * & * &  & * \\ \hline
+\cellcolor[HTML]{FFFFFF} & C$_i$ (SEND) & * & * &  & * \\ \cline{2-6}
+\multirow{-2}{*}{\cellcolor[HTML]{FFFFFF}Req 2: Select-Case} & C$_i$ (RECV) & * & * &  & * \\ \hline
+Req 3: Lock & LOCK & * &  & * &  \\ \hline
+\cellcolor[HTML]{FFFFFF} & CLOSE &  & * &  & * \\ \cline{2-6}
+\cellcolor[HTML]{FFFFFF} & UNLOCK &  & * &  & * \\ \cline{2-6}
+\cellcolor[HTML]{FFFFFF} & SIGNAL &  & * &  & * \\ \cline{2-6}
+\cellcolor[HTML]{FFFFFF} & BRDCST &  & * &  & * \\ \cline{2-6}
+\multirow{-5}{*}{\cellcolor[HTML]{FFFFFF}Req 4: Unblocking} & SELECT-DEF &  & * &  & * \\ \hline
+Go & GO &  &  &  & * \\ \hline
+\end{tabular}
