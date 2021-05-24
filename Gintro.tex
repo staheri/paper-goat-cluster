@@ -1,3 +1,43 @@
+
+Increasing levels of parallelism and concurrency in HPC and Cloud---both
+at the user program level and in the infrastructure---leads to concurrency
+bugs which are high up among the root-causes for lost productivity.
+%
+This trend will only worsen with the upcoming HPC/Cloud
+integration~\cite{dan-herbein-dong}.
+%
+\ggcmt{Cite https://sc20.supercomputing.org/proceedings/sotp/sotp\_pages/sotp126.html}
+%
+Unless simple and effective concurrency analysis and
+debugging methods are employed at all levels of
+concurrency, one will face the complexity of maintaining
+the debugging ecosystem in addition to the codebase itself.
+
+
+Motivated by these considerations,
+in this study we take the feature-rich language, namely Go,
+and research the extent to which a simple and well-known
+mechanism---namely {\em schedule manipulation}---can be used
+to find bugs.
+%
+Not only is Go gaining in acceptance in the Cloud community,
+it also involves shared memory, message passing, nondeterminism
+and dynamic process creation in a manner that makes debugging hard.
+%
+Our work is especially relevant
+because Go is a language that has leapfrogged tooling support: not only
+are there no widely usable tools for debugging Go, even well-curated
+bug benchmark suites are only just now beginning to appear.
+%
+\ggcmt{Cite ASPLOS and CGO}
+%
+Combinations of Go's features are found in many other languages,
+making our study carry a broader degree of relevance
+to the HPC/Cloud ecosystem, in addition to providing an effective
+tool for Go itself.
+
+
+
 Go \cite{go} is a statically typed language initially developed by Google and at present widely used by many.
 %
 It employs channel-based Hoare's Communicating Sequential Processes (CSP) \cite{hoare-csp78} semantics in its core and provides a productivity-enhancing environment for concurrent programming.
@@ -40,7 +80,8 @@ There are some encouraging developments in support of debugging, such as a data 
 However, the support for ``traditional concurrency debugging'' such as detecting atomicity violations and Go-specific bug-hunting support for Go idioms (e.g., misuse of channels and locks) remain insufficiently addressed.
 %
 
-In this work, we present the initial steps that we took towards addressing this lack.
+\noindent{\bf Contributions:\/} In
+this work, we present the initial steps that we took towards addressing this lack.
 %
 Since a bug might
 occur
