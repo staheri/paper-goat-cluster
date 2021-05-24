@@ -1,0 +1,19 @@
+
+Here, I'll summarize the GOAT Cluster paper to better rewrite it myself.
+
+Points to make in various sections:
+
+* Intro
+  - start higher level
+  - emphasize relevance to HPC and CLoud integration etc
+  - emphasize 'simple is better'
+    > delay-bounding is simple
+    > can it work?
+    > how well?
+    > how well to eval?
+      = today's bugs
+        * bugs caught?
+      = tomorrow's bugs
+        * coverage goals?
+        * coverage goals met?
+
