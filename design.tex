@@ -2,7 +2,7 @@ Based on a proposed bug taxonomy for Go \cite{tu-concurrentBugs-asplos19}, bugs 
 %
 Blocking bugs historically refer to situations where one or more processing units (\eg goroutines) are blocked, waiting for an external signal to resume (\ie deadlocks).
 %
-As mentioned in section \ref{sec:bg}, the built-in deadlock detector (if not disabled \cite{go-netDeadlock}) only detects global deadlocks where the main goroutine is blocked and ignores other goroutines' states. For instance, more than 70\% of blocking bugs (partial deadlocks and leaks) in GoKer \cite{GoKer} are not detectable by the built-in deadlock detector.
+As mentioned in section \ref{sec:bg}, the built-in deadlock detector (if not disabled \cite{go-netDeadlock}) only detects global deadlocks where the main goroutine is blocked and ignores other goroutines' states. For instance, more than 70\% of blocking bugs (partial deadlocks and leaks) in GoKer \cite{yuan-gobench-cgo21} are not detectable by the built-in deadlock detector.
 %
 
 As we have shown in our previous work \cite{parlot,difftrace}, dynamic tracing is an effective way in debugging large-scale applications.
@@ -50,7 +50,7 @@ Sections \ref{sec:dl_instrument} and \ref{sec:dl_evaluation} provide more detail
 \subsection{Execution Concurrency Tracing (ECT)}
 \label{sec:ect}
 %\stcmtside{why we need to mutate ET to ECT}
-According to \cite{tu-concurrentBugs-asplos19,yuan-gobench-cgo21}, the primary cause of most real-world bugs is the misuse of concurrency features like channels, mutexes, and waitGroups.
+According to \cite{tu-concurrentBugs-asplos19,yuan-gobench-cgo21}, the primary cause of most real-world bugs is the misuse of concurrency features like channels, mutexes, and waitGroups (table \ref{tab:comarison}).
 %
 However, the standard tracer package does not capture concurrency primitive usage events as it aims more on performance bugs.
 %
@@ -73,11 +73,11 @@ The decompressed ECT is a totally ordered \textit{sequence} of events in which t
 %
 ECT also contains the call-stack for each event enabling a direct mapping of events to source-line numbers.
 %
-The alphabet of ECT is total of 64 events -- 49 from original tracer package \cite{goParserSource}, categorized and summarized in table \ref{tab:events} and 13 additional events that we added to capture concurrency usage events:
+The alphabet of ECT is total of 63 events -- 49 from original tracer package \cite{goParserSource}, categorized and summarized in table \ref{tab:events} and 14 additional events that we added to capture concurrency usage events:
 %
 \begin{itemize}
     \item \textbf{Channel:} For each channel operation (make, send, receive, close), ECT includes an event with a unique id assigned to each channel.
-    \item \textbf{Mutex, WaitGroup \& Conditional Variables:} Similar to channels, we assign a unique id to each concurrency object and emit an event for each of their operations (lock, unlock, add, wait, signal, broadcast).
+    \item \textbf{(RW)Mutex, WaitGroup \& Conditional Variables:} Similar to channels, we assign a unique id to each concurrency object and emit an event for each of their operations (lock, unlock, rlock, runlock, add, wait, signal, broadcast).
     \item \textbf{Select \& Schedule:} The scheduler and the \textit{select} structure introduce non-determinism to the execution. We keep track of the decisions made by the scheduler and select statements to obtain an accurate decision path during execution.
 \end{itemize}
 
@@ -236,6 +236,20 @@ Additionally, to manipulate the native scheduler around CU points, we inject cal
 
 
 \subsection{Evaluation}
+In this section, we assess the ability of \goat and its variations in detecting bugs with minimum number of executions required to expose the bug.
+%
+We have compared \goat against three existing dynamic detectors:
+\begin{itemize}
+\item Built-in Deadlock Detector: It is an embeded mechanism in the standard Go runtime. The mechanism periodically makes sure that the queue of \textit{runnable} goroutines is never empty until the main goroutine terminates. If the queue is empty and main has not terminated yet (\ie main is blocked), it throws a runtime error.
+  \item GoLeak \cite{goleak}: This leak detector from Uber checks the program stack at the end of the main goroutine to find the application-level goroutines that remained in the stack (\ie leaked).
+• LockDL \cite{lockdl}: This tool intercept with all mutex locks and unlocks of the target application to maintain a ``lock-set'' data structure. LockDL issues warning during runtime when it finds a circular wait in the lock-set and double-locking the same lock. It has a timeout mechanism for application that traps into global deadlocks (30 seconds by default).
+\end{itemize}
+
+All experiments are performed on a server with two AMD Ryzen 5 3600 6-Core Processor (12 total cores with 2 threads per core and 6 cores per socket), 64 GB of RAM with generic Ubuntu 4.15.0 and Go version 1.15.6.
+%
+Table \ref{tab:comarison} shows the details of results obtained from executing each tool per bug 1000 times.
+%
+We show that the tool is unable to detect the bug after 1000 executions with \textbf{X (1000)}.
 
 \stcmt{Experimental methodology - GoKer - Two main figures, one table I will add}
 \begin{itemize}
@@ -262,9 +276,9 @@ Additionally, to manipulate the native scheduler around CU points, we inject cal
 
 
 \begin{table*}[]
-\caption{Detected bug for each blocking bug in }
+\caption{Output of each debugging tool after experimenting on bug for GoKer \cite{yuan-gobench-cgo21} blocking bugs. For each tool, here is how to interprete its output: Detected bug (minimum \# of executions required) -- \textbf{X (1000)} means that the tool is not able to detect any bug after 1000 executions. \textbf{PDL}: Partial Deadlock, \textbf{GDL}: Global Deadlock, \textbf{PDL-k}: Partial Deadlock with \textit{k} number of goroutines leaked. \textbf{DL}: A warning for potential deadlock is issued. \textbf{TO/GDL}: The global deadlock is detected because none of goroutines made any progress after 20 seconds, \textbf{CRASH}: The execution paniced because of a flaw in the execution (e.g., send on closed channels panic), \textbf{HANG}: The tool halt for more than 10 minutes.}
 \centering
-\scalebox{0.8}{
+\scalebox{0.75}{
     \input{tabs/comparison}
   }
 \label{tab:comarison}

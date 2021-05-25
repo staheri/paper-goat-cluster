@@ -6,8 +6,6 @@ bugs which are high up among the root-causes for lost productivity.
 This trend will only worsen with the upcoming HPC/Cloud
 integration~\cite{dan-herbein-dong}.
 %
-\ggcmt{Cite https://sc20.supercomputing.org/proceedings/sotp/sotp\_pages/sotp126.html}
-%
 Unless simple and effective concurrency analysis and
 debugging methods are employed at all levels of
 concurrency, one will face the complexity of maintaining
@@ -26,9 +24,7 @@ and dynamic process creation in a manner that makes debugging hard.
 Our work is especially relevant
 because Go is a language that has leapfrogged tooling support: not only
 are there no widely usable tools for debugging Go, even well-curated
-bug benchmark suites are only just now beginning to appear.
-%
-\ggcmt{Cite ASPLOS and CGO}
+bug benchmark suites are only just now beginning to appear \cite{tu-concurrentBugs-asplos19,yuan-gobench-cgo21}.
 %
 Combinations of Go's features are found in many other languages,
 making our study carry a broader degree of relevance
@@ -41,12 +37,12 @@ our priorities was to reuse as much of the existing Go infrastructure
 as we could.
 %
 The static analysis component relies on source rewriting, inserting
-{\em potential} schedule yield points 
+{\em potential} schedule yield points
 at all
 ``interesting'' (concurrency-relevant) spots inside a given Go program.
 %
 The dynamic component consists of yielding control back
-to the Go runtime with a user-settable probability value.
+to the Go runtime with a user-settable probability value. \stcmtside{also tracing}
 
 
 Our preliminary results in terms of this combined static/dynamic
@@ -61,7 +57,7 @@ well these metrics are met.
 %
 Again, we walked into a field with very few such coverage metrics.
 
-
+\stcmt{ about below statement: the coverage metrics that we designed is brand new. It is inspired by other concurrrency metrics but new ideas are generated. Also coverage metrics for select statement are purely ours. There is no mention of select statements as the root cause of rare bugs anywhere in the literature. Based on our vision from studying bug kernels using dynamic tracing, we came up with new coverage metrics.}
 Our design of coverage metrics proceeded
 by observing the preponderance
 of reported Go bugs in recent studies.
@@ -74,7 +70,7 @@ well known concurrency metrics in related work.
 We take advantage of our own tracing framework to
 tabulate and report on the achieved coverage metrics.
 %
-All this is offered via a new tool called GOAT (Go Analysis Tool)
+All this is offered via a new tool called \goat (Go Analysis and Testing Tool)
 that we now describe, after introducing relevant features of Go
 itself.
 
@@ -114,7 +110,7 @@ The language is equipped with a rich vocabulary of \textit{serialization} featur
 %
 This rich mixture of features has, unfortunately, greatly exacerbated the complexity of Go debugging.
 %
-In fact, the popularity of Go has outpaced its debugging support~\cite{go-survey,tu-concurrentBugs-asplos19,yuan-gobench-cgo21}.
+In fact, the popularity of Go has outpaced its debugging support~\cite{go-survey,tu-concurrentBugs-asplos19,dilley-empirical-saner19}.
 %
 There are some encouraging developments in support of debugging, such as a data race checker \cite{go-race-blog} that has now become a standard feature of Go, and has helped catch many a bug.
 %
@@ -141,25 +137,7 @@ With the help of this novel \textit{automated dynamic tracing} mechanism,
 we have implemented a testing framework that
 \textit{accelerates} bug exposure by manipulating the native scheduler around \textit{critical points} in the code---combination of constructs that heighten the propensity for bug-introduction.
 %
-\stcmt{Effectivness of Go in detecting bugs and accelrating bug exposure}
-\begin{itemize}
-  \item We have tested GOAT on GoBench GoKer
-  \item Majority of bugs are caught and their root cause is studied using GOAT features.
-  \item However, there are some bugs that are rare to happen (figure \ref{fig:rare_bugs}).
-  \item These are the kind of bugs that are often refered as \textit{hidden bugs}
-  \item So we want to expose them sooner by purturbing the scheduler
-  \item It is proved that random testing would often perform as well as systematic testing in accelerating bug exposure.
-  \item Such facility is not available for Go, so we implemented GOAT
-\end{itemize}
 
-\stcmt{intro to coverage}
-\begin{itemize}
-  \item We also have defined a coverage metric/model/criterion To measure the quality of tests that GOAT is able to perform.
-  %
-  \item Our experiments show that GOAT is effecive in detecting 100\% of blocking bugs in GoKer bench.
-  \item Our experiments also show that the coverage metrics that we designed have linear correlation with the rate of bug exposure (i.e., number of testing runs that it takes for the buggy interleaving to occur) for rare bugs.
-  \item While these ideas have been developed and proved to be effective in other contexts \cite{burckhardt-depthBug-asplos10,emmi-delayBounded-popl11,madanlal-preemptionBound-pldi07}, our contribution is to show these ideas in the context of a modern language with growing industry-side adoption.
-\end{itemize}
 
 
 To summarize, here are our contributions:

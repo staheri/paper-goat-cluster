@@ -1,0 +1,20 @@
+
+\stcmt{intro to coverage}
+\begin{itemize}
+  \item We also have defined a coverage metric/model/criterion To measure the quality of tests that GOAT is able to perform.
+  %
+  \item Our experiments show that GOAT is effecive in detecting 100\% of blocking bugs in GoKer bench.
+  \item Our experiments also show that the coverage metrics that we designed have linear correlation with the rate of bug exposure (i.e., number of testing runs that it takes for the buggy interleaving to occur) for rare bugs.
+  \item While these ideas have been developed and proved to be effective in other contexts \cite{burckhardt-depthBug-asplos10,emmi-delayBounded-popl11,madanlal-preemptionBound-pldi07}, our contribution is to show these ideas in the context of a modern language with growing industry-side adoption.
+\end{itemize}
+
+\stcmt{Effectivness of Go in detecting bugs and accelrating bug exposure}
+\begin{itemize}
+  \item We have tested GOAT on GoBench GoKer
+  \item Majority of bugs are caught and their root cause is studied using GOAT features.
+  \item However, there are some bugs that are rare to happen (figure \ref{fig:rare_bugs}).
+  \item These are the kind of bugs that are often refered as \textit{hidden bugs}
+  \item So we want to expose them sooner by purturbing the scheduler
+  \item It is proved that random testing would often perform as well as systematic testing in accelerating bug exposure.
+  \item Such facility is not available for Go, so we implemented GOAT
+\end{itemize}
