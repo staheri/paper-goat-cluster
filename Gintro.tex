@@ -1,30 +1,47 @@
 
-Increasing levels of parallelism and concurrency in HPC and Cloud---both
-at the user program level and in the infrastructure---leads to concurrency
-bugs which are high up among the root-causes for lost productivity.
+The use of increasing levels of parallelism and concurrency in HPC and Cloud
+is a double-edged sword: while it helps increase performance, save energy, and
+enhance user experience, it
+unfortunately comes with the cost of concurrency bugs.
 %
-This trend will only worsen with the upcoming HPC/Cloud
-integration~\cite{dan-herbein-dong}.
+This trend can worsen with the upcoming HPC/Cloud
+integration~\cite{dan-herbein-dong} unless we accelerate the
+development of concurrency debugging methods.
 %
-Unless simple and effective concurrency analysis and
-debugging methods are employed at all levels of
-concurrency, one will face the complexity of maintaining
-the debugging ecosystem in addition to the codebase itself.
+However, unless these debugging systems themselves are
+simple and widely applicable,
+the maintenance of multiple debugging approaches
+will also prove to be a burden.
+%
+Driven by these observations,
+in this paper we take a feature-rich language, namely Go~\cite{go-citation},
+research how to develop an effective debugging methods for real-world
+Go programs, and present the resulting new tool called GoAT.
+%
+The main contribution of this work is to demonstrate how
+GoAT's static and dynamic analysis methods---while very well known
+by their names and effectiveness in simpler contexts---can 
+be brought to bear on realistic bug-scenarios in the setting of
+a complex language such as Go; this is our central contribution.
 
 
-Motivated by these considerations,
-in this study we take the feature-rich language, namely Go,
-and offer a combined static and dynamic approach for debugging
-Go programs.
+Go enjoys accelerating acceptance in a wide variety of
+communities---especially the Cloud community.
 %
-Not only is Go gaining in acceptance in the Cloud community,
-it also involves shared memory, message passing, nondeterminism
-and dynamic process creation in a manner that makes debugging hard.
+It involves shared memory, message passing, nondeterministic
+message reception and selection,
+dynamic process creation,
+and programming styles that tend to create thousands of Go routines
+and discard them to be garbage collected when not needed.
 %
-Our work is especially relevant
-because Go is a language that has leapfrogged tooling support: not only
-are there no widely usable tools for debugging Go, even well-curated
-bug benchmark suites are only just now beginning to appear \cite{tu-concurrentBugs-asplos19,yuan-gobench-cgo21}.
+This combination of features is known to be the reason why Go
+is popular; yet, it is also well recognized that these features also make
+Go debugging hard.
+%
+Our work is especially relevant considering that
+there are there no widely usable tools for debugging Go; even well-curated
+bug benchmark suites are only just
+now beginning to appear~\cite{tu-concurrentBugs-asplos19,yuan-gobench-cgo21}.
 %
 Combinations of Go's features are found in many other languages,
 making our study carry a broader degree of relevance
@@ -32,8 +49,8 @@ to the HPC/Cloud ecosystem, in addition to providing an effective
 tool for Go itself.
 
 
-Given the extent of lack of verification support, one of
-our priorities was to reuse as much of the existing Go infrastructure
+One of our priorities in designing GoAT
+was to reuse as much of the existing Go infrastructure
 as we could.
 %
 The static analysis component relies on source rewriting, inserting
@@ -42,14 +59,18 @@ at all
 ``interesting'' (concurrency-relevant) spots inside a given Go program.
 %
 The dynamic component consists of yielding control back
-to the Go runtime with a user-settable probability value. \stcmtside{also tracing}
+to the Go runtime with a user-settable probability value.
+%
+Last but not least, we also exploited the tracing features of Go
+to provide, via GoAT, (1)~as much debug information as possible, and
+(2)~use the tracing features to measure and report concurrency coverage.
 
 
 Our preliminary results in terms of this combined static/dynamic
 approach yielded encouraging results.
 %
-However, bug-hunting on curated bug data sets do not give any
-indications on how well this approach can {\em generalize}.
+However, bug-hunting on curated bug data sets cannot, by itself, give any
+indications on how well an approach might {\em generalize}.
 %
 Generalization in terms of debugging tools is often achieved
 by carefully defining {\em coverage metrics} and showing how
@@ -57,15 +78,26 @@ well these metrics are met.
 %
 Again, we walked into a field with very few such coverage metrics.
 
-\stcmt{ about below statement: the coverage metrics that we designed is brand new. It is inspired by other concurrrency metrics but new ideas are generated. Also coverage metrics for select statement are purely ours. There is no mention of select statements as the root cause of rare bugs anywhere in the literature. Based on our vision from studying bug kernels using dynamic tracing, we came up with new coverage metrics.}
-Our design of coverage metrics proceeded
-by observing the preponderance
-of reported Go bugs in recent studies.
+
+Our coverage metrics
+are clearly inspired by other concurrrency coverage
+metrics~\cite{cite,a,few,of,them}.
 %
-Informed by these studies,
-we define {\em coverage metrics} by reusing
-(and extending)
-well known concurrency metrics in related work.
+Overall, our coverage metrics are inspired by real-world Go bugs,
+and this is new in terms of debugging Go concurrrency.
+%
+Also coverage metrics for select statements---high in the list of
+Go bugs---are believed to be novel.
+%
+Last but not least, we also differentiate between covering
+easier bugs and rare bugs: the former do not require any
+schedule control, while the latter is triggered only through schedule
+control.
+
+
+Developing these coverage metrics required studying the output
+of our initial
+tracing infrastructure on Go bug benchmarks.
 %
 We take advantage of our own tracing framework to
 tabulate and report on the achieved coverage metrics.
@@ -73,6 +105,7 @@ tabulate and report on the achieved coverage metrics.
 All this is offered via a new tool called \goat (Go Analysis and Testing Tool)
 that we now describe, after introducing relevant features of Go
 itself.
+
 
 \noindent{\bf Features of Go:\/}
 Go \cite{go} is a statically typed language initially developed by Google and at present widely used by many.
