@@ -1,10 +1,5 @@
-Based on a proposed bug taxonomy for Go \cite{tu-concurrentBugs-asplos19}, bugs are categorized separately based on their \textit{causes} (shared-memory vs. message-passing) and \textit{symptoms} (blocking vs. non-blocking).
+%As mentioned in section \ref{sec:bg}, the built-in deadlock detector (if not disabled \cite{go-netDeadlock}) only detects global deadlocks where the main goroutine is blocked and ignores other goroutines' states. For instance, more than 70\% of blocking bugs (partial deadlocks and leaks) in GoKer \cite{yuan-gobench-cgo21} are not detectable by the built-in deadlock detector.
 %
-Blocking bugs historically refer to situations where one or more processing units (\eg goroutines) are blocked, waiting for an external signal to resume (\ie deadlocks).
-%
-As mentioned in section \ref{sec:bg}, the built-in deadlock detector (if not disabled \cite{go-netDeadlock}) only detects global deadlocks where the main goroutine is blocked and ignores other goroutines' states. For instance, more than 70\% of blocking bugs (partial deadlocks and leaks) in GoKer \cite{yuan-gobench-cgo21} are not detectable by the built-in deadlock detector.
-%
-
 As we have shown in our previous work \cite{parlot,difftrace}, dynamic tracing is an effective way in debugging large-scale applications.
 %
 We found that Go execution tracer \cite{go-cmd-trace} gives detailed information about the \textit{performance} behavior during execution.
@@ -20,11 +15,6 @@ In the remainder of this section, we briefly describe the enhancement that we ma
 Then in section \ref{sec:dld}, we explain how we exploit ECT contents for post-mortem debugging of the program.
 %
 Sections \ref{sec:dl_instrument} and \ref{sec:dl_evaluation} provide more details on implementation and evaluation of deadlock detection using program ECT.
-
-
-
-%
-
 
 \begin{table}[]
     \centering
@@ -50,11 +40,11 @@ Sections \ref{sec:dl_instrument} and \ref{sec:dl_evaluation} provide more detail
 \subsection{Execution Concurrency Tracing (ECT)}
 \label{sec:ect}
 %\stcmtside{why we need to mutate ET to ECT}
-According to \cite{tu-concurrentBugs-asplos19,yuan-gobench-cgo21}, the primary cause of most real-world bugs is the misuse of concurrency features like channels, mutexes, and waitGroups (table \ref{tab:comarison}).
+According to \cite{tu-concurrentBugs-asplos19,yuan-gobench-cgo21}, the primary cause of most real-world bugs is the misuse of concurrency features like channels, mutexes, and waitGroups (table \ref{tab:comparison}).
 %
 However, the standard tracer package does not capture concurrency primitive usage events as it aims more on performance bugs.
 %
-Although the event vocabulary is rich enough to model comprehensive goroutine latency and blocking behavior accurately, the tracer package cannot answer questions such as do the synchronization constructs work as expected? In the leaky interleaving of listing \ref{listing:moby28462}, which goroutine is holding the lock that \texttt{Monitor} tends to acquire? What are the resources that contribute to this circular wait? In the successful interleaving of listing \ref{listing:moby28462}, is there any \textit{potential flaw} that did not manifest?
+Although the event vocabulary is rich enough to model comprehensive goroutine latency and blocking behavior accurately, the tracer package cannot answer questions such as do the synchronization constructs work as expected? In the leaky interleaving of listing \ref{listing:moby28462.minipage}, which goroutine is holding the lock that \texttt{Monitor} tends to acquire? What are the resources that contribute to this circular wait? In the successful interleaving of listing \ref{listing:moby28462.minipage}, is there any \textit{potential flaw} that did not manifest?
 
 %
 %\stcmtside{why we think dynamic tracing is effective}
@@ -84,9 +74,9 @@ The alphabet of ECT is total of 63 events -- 49 from original tracer package \ci
 %\stcmtside{how ECT captures concurrency blocking behavior}
 Blocking concurrency operations such as channels \textit{sends}/\textit{recvs}, mutex \textit{locks}, waitGroup/conditional variable \textit{wait} and \textit{select} (when none of the cases are available) prevents the executor goroutine from making progress.
 %
-For each blocking operation, ECT captures a pair of pre-operation and post-operation events (yellow and green boxes respectively).
+For each blocking operation, ECT captures a pair of pre-operation and post-operation events to distinguish between the \textit{request for action} and \textit{completion of action}.
 %
-Hence, ECT enables concurrency state modeling at any given step of execution.
+ECT enables concurrency state modeling at any given step of execution through a replay of the sequence of events.
 %
 
 \subsection{Deadlock Detection}
@@ -111,61 +101,75 @@ We say a goroutine is an application-level goroutine if it is the main goroutine
 3) it is not a tracer goroutine.
 Such distinguishment between goroutines is essential to define the boundaries of the application and the underlying system.
 
-
-
 \begin{figure}[]
 \centering
 \includegraphics[width=0.75\linewidth]{figs/gtree.pdf}
 %\includegraphics[]{figs/overview.png}
 %\includegraphics[]{figs/overv}
-\label{fig:gtree}
 \caption{Goroutine tree of the leaky interleaving in listing \ref{listing:moby28462}}
+\label{fig:gtree}
 \end{figure}
 
-Upon program termination, we construct a goroutine tree (figure \ref{fig:gtree}) of application goroutines by replaying through the execution ECT.
 %
 In addition to the parent/children relation of goroutines, nodes of the goroutine tree contains information about the goroutine creation site, the resources that it holds at each execution point and the final executed event right before program termination.
 %
-If tracing is enabled, every application goroutine invokes the tracer to capture $GoEnd$ before finishing its execution and exit (change status from \textit{grunnable} to \textit{gdead})\cite{goexit-line-of-code}.
+When tracing is enabled, every application goroutine invokes the tracer to capture $GoEnd$ before finishing its execution and exit (\ie change status from \textit{grunnable} to \textit{gdead}\cite{goexit-line-of-code}).
 %
-Before the main function returns (\ie exits), it calls the scheduler (through \texttt{runtime.Gosched()} invocation which captures $GoSched$ event) to hand over the control to the root goroutine to finish up program execution.
+Before the main function returns, it calls the scheduler (through \texttt{runtime.Gosched()} invocation which captures $GoSched$ event) to hand over the control to the root goroutine to finish up program execution.
 %
 Since we instrument the application to call \texttt{runtime.traceStop} to stop tracing when main returns, $GoSched$ would be the last event captured for the main goroutine if it returns succesfully.
 %
+
 We call an execution \textbf{successful}, if below conditions hold
-\begin{description}
+\begin{enumerate}
   \item (1) all goroutines spawned in the main goroutine has $GoEnd$ as their final event
   \item (2) the final event of the main goroutine is $GoSched$ with \texttt{runtime.traceStop} on top of its stack.
-\end{description}
+\end{enumerate}
+If either of above conditions does not satisfy after program execution, a \textbf{deadlock} happens because it shows that there are one or more goroutine that did not reach its final state. \goat executes procedure \ref{proc:deadlockCheck} which is a BFS traversal on the goroutine tree to check if the program suffers from deadlocks.
+
+\begin{small}
+\begin{algorithm}[]
+ \DontPrintSemicolon
+ \SetKwFunction{KwDeadlockCheck}{DeadlockCheck}
+% \SetKwInOut{Input}{Input} \SetKwInOut{Output}{Output}\SetKwInOut{Local}{Local}
+  %\SetKw{KwEach}{each}
+ %\Input{Stack of elements $S$, $S[1]$ is top}
+ %\Output{$NLR(T)$}
+ \KwDeadlockCheck{$G$}:{\\
+ \Indp
+    \If{$cur$.lastEvent$ \neq$ \texttt{GoSched}}{
+      return \textbf{Global Deadlock}\;
+    }
+    $toVisit$ = $[G.children]$\;
+    \For{ $|toVisit| \neq 0$}{
+         $cur$ = $toVisit$[0]\;
+         \If{$cur$.lastEvent $\neq$ \texttt{GoEnd}}{
+            return \textbf{Partial Deadlock (leak)}\;
+          }
+         \For {$n$ in $cur.Children$}{
+            append $n$ to $toVisit$\;
+          }
+          $toVisit = toVisit[1:]$\;
+      }
+      return \textbf{Pass}\;
+  }
+ \caption{\texttt{DeadlockCheck} procedure with root node of goroutine tree (main goroutine) as input}
+ \label{proc:deadlockCheck}
+\end{algorithm}
+\end{small}
 
 
-If either of above conditions does not satisfy after program execution, a \textbf{deadlock} happens because it shows that there are one or more goroutine that did not reach its final state. In other words:
 
-if \texttt{finalEvent(}ECT.G$_{main}$\texttt{)} $\neq GoSched \Rightarrow Global Deadlock (GDL)$
-else
-  for ECT.G$_{appi}$ in application-level goroutines  :
-    if \texttt{finalEvent(}ECT.G$_{main}$\texttt{)} $\neq GoSched \Rightarrow Partial Deadlock (PDL)$
-
-    else:
-    $Successful$
-
-%
-Other execution models such as figure \ref{fig:execVis} are also constructible when replaying the execution ECT.
-%
-\stcmt{I want to say that middlewares like DiffTrace and GOAT are helpful for human debuggers, because at the end of the day, nothing can be done fully automatically}
-Human debuggers can use such models to review program execution and compare their expectations with actual behavior.
-%
-\stcmtside{future work}
-Moreover, online or offline verifiers can take ECT as input and construct logical models to verify the program execution.
-%
-
-
-\begin{figure}
+\begin{table*}[]
+\caption{Output of each debugging tool after experimenting on bug for GoKer \cite{yuan-gobench-cgo21} blocking bugs. For each tool, here is how to interprete its output: Detected bug (minimum \# of executions required) -- \textbf{X (1000)} means that the tool is not able to detect any bug after 1000 executions. \textbf{PDL}: Partial Deadlock, \textbf{GDL}: Global Deadlock, \textbf{PDL-k}: Partial Deadlock with \textit{k} number of goroutines leaked. \textbf{DL}: A warning for potential deadlock is issued. \textbf{TO/GDL}: The global deadlock is detected because none of goroutines made any progress after 20 seconds, \textbf{CRASH}: The execution paniced because of a flaw in the execution (e.g., send on closed channels panic), \textbf{HANG}: The tool halt for more than 10 minutes.}
 \centering
-  \includegraphics[width=.95\linewidth]{figs/overview.pdf}
-  \caption{Framework Overview (NEED TO UPDATE)}
-  \label{fig:overview}
-\end{figure}
+\scalebox{0.75}{
+    \input{tabs/comparison}
+  }
+\label{tab:comparison}
+\end{table*}
+
+
 
 \subsection{Accelerating Bug Exposure}
 \label{sec:critical}
@@ -189,30 +193,16 @@ Kind $k\in$ \texttt{Channel} $\cup$ \texttt{Sync} $\cup$ \texttt{Go}:
   \item \texttt{Go} = \{\texttt{go}, \texttt{select}, \texttt{range}\}
 \end{itemize}
 
-The first column of table \ref{tab:moby_cov_table} shows the critical points extracted from program in listing \ref{listing:moby28462}.
+The first column of table \ref{tab:moby_cov_table} shows the critical points extracted from program in listing \ref{listing:moby28462.minipage}.
 %
 We identify CU points by parsing the abstract syntax tree (AST) of the target source using Go AST package \cite{go-package-ast}.
-
+%
 CU points are passed to the instrumentation phase of \goat to inject scheduler perturbation handlers before these points.
-%
-%
-%
-% Through statically traversing the AST of any target package (e.g., files of the “main” package), goat gathers a set of line numbers where concurrency functions are used. These points (aka critical points) are the points where a context switch might drastically change the concurrency behavior of the program and trigger an undiscovered bug. Here are the AST nodes that represent a critical point:
-% Go: ast.Node GoStmt   (example: go func() // spawning a new goroutine)
-% Send: ast.Node SendStmt     (example: channel <- x)
-% Recv: ast.Node UniExprStmt(op=”<-”) (example:  <- channel)
-% Mutex, WaitGroup, CondVars: ast.Node CallExpr (example: xxx.Lock())
-% Xxx.Lock()
-% Xxx.Unlock()
-% Xxx.Add()
-% Xxx.Wait()
-% Xxx.Signal()
-% Xxx.Broadcast()
-% Careful adjustment is required for Select and Range statements that have send/recv as their children in the AST.
+
 
 \subsection{Instrumentation}
-\label{sec:instrument}
-\stcmt{below is the raw text that I wrote for instrumentation. I will complete it}
+\label{sec:dl_instrument}
+
 To equip the target application with concurrency tracing mechanism, we automatically inject three lines of code to the beginning of main or test function using AST package \cite{go-package-ast}:
 
 \begin{itemize}
@@ -227,7 +217,7 @@ Additionally, to manipulate the native scheduler around CU points, we inject cal
 
 \begin{table}[]
 \centering
-\caption{Concurrency Usages and coverage requirements of program in listing\ref{listing:moby28462}}
+\caption{Concurrency Usages and coverage requirements of program in listing\ref{listing:moby28462.minipage}}
 \scalebox{0.9}{
 \input{tabs/moby_coverage_table}
 }
@@ -236,33 +226,38 @@ Additionally, to manipulate the native scheduler around CU points, we inject cal
 
 
 \subsection{Evaluation}
+\label{sec:dl_evaluation}
 In this section, we assess the ability of \goat and its variations in detecting bugs with minimum number of executions required to expose the bug.
 %
 We have compared \goat against three existing dynamic detectors:
 \begin{itemize}
-\item Built-in Deadlock Detector: It is an embeded mechanism in the standard Go runtime. The mechanism periodically makes sure that the queue of \textit{runnable} goroutines is never empty until the main goroutine terminates. If the queue is empty and main has not terminated yet (\ie main is blocked), it throws a runtime error.
-  \item GoLeak \cite{goleak}: This leak detector from Uber checks the program stack at the end of the main goroutine to find the application-level goroutines that remained in the stack (\ie leaked).
-• LockDL \cite{lockdl}: This tool intercept with all mutex locks and unlocks of the target application to maintain a ``lock-set'' data structure. LockDL issues warning during runtime when it finds a circular wait in the lock-set and double-locking the same lock. It has a timeout mechanism for application that traps into global deadlocks (30 seconds by default).
+  \item \textit{Built-in} Deadlock Detector: It is an embeded mechanism in the standard Go runtime. The mechanism periodically makes sure that the queue of \textit{runnable} goroutines is never empty until the main goroutine terminates. If the queue is empty and main has not terminated yet (\ie main is blocked), it throws a runtime error.
+  \item \textit{goleak} \cite{goleak}: This leak detector from Uber checks the program stack at the end of the main goroutine to find the application-level goroutines that remained in the stack (\ie leaked).
+  \item \textit{LockDL} \cite{lockdl}: This tool intercept with all mutex locks and unlocks of the target application to maintain a ``lock-set'' data structure. \textit{LockDL} issues warning during runtime when it finds a circular wait in the lock-set or double-locking the same lock. It has a timeout mechanism for application that traps into global deadlocks (30 seconds by default).
 \end{itemize}
 
 All experiments are performed on a server with two AMD Ryzen 5 3600 6-Core Processor (12 total cores with 2 threads per core and 6 cores per socket), 64 GB of RAM with generic Ubuntu 4.15.0 and Go version 1.15.6.
 %
-Table \ref{tab:comarison} shows the details of results obtained from executing each tool per bug 1000 times.
+Table \ref{tab:comparison} shows the details of results obtained from executing each tool per bug 1000 times.
 %
 We show that the tool is unable to detect the bug after 1000 executions with \textbf{X (1000)}.
+%
 
-\stcmt{Experimental methodology - GoKer - Two main figures, one table I will add}
-\begin{itemize}
-  \item Figure \ref{fig:detection} : How \textbf{WELL} we detected bugs comparing to others
-  \item Figure \ref{fig:runs} : How \textbf{SOON} we detected bugs comparing to others
-\end{itemize}
-
-
+%
+Figure \ref{fig:detection} and table \ref{tab:comparison} show that variations of \goat outperforms other detector by discovering the bug in 100\% of the GoKer blocking benchmark.
+%
+Figure \ref{fig:runs} and highlighted cells of table \ref{tab:comparison} show that the idea of injecting random delays around concurrency usage points in the program drastically reduces the required number of testing iterations until the bug occur.
+%
+D0 means \goat did not delay the program at any point and D4 means that the target program has been delayed up to four times around its CU points.
+%
+Figures \ref{fig:detection} and \ref{fig:runs} also state that the increase in the delay bound of \goat does not necessarily increase the chance of exposing the bug.
+%
+For example, the row of bug \texttt{serving\_2137} in table \ref{tab:comparison} show that only \goat D2 were able to detect the bug.
 
 \begin{figure}
 \centering
   \includegraphics[width=.95\linewidth]{figs/P4_detections.pdf}
-  \caption{Distribution of detected bugs by built-in deadlock detector (BUILTINDL), LockDL, GoLeak, and GOAT different d. (over 1000 runs). pdl: partial deadlock, gdl: global deadlock, crash/halt: causes the program to crash or halt on detection, x: nothing is detected }
+  \caption{Distribution of detected bugs by built-in deadlock detector (BUILTINDL), LockDL, GoLeak, and GOAT different D over 1000 runs. PDL: partial deadlock, GDL/TO: global deadlock, Crash/Halt: causes the program to crash or halt during detection, X: nothing is detected }
   \label{fig:detection}
 \end{figure}
 
@@ -273,13 +268,3 @@ We show that the tool is unable to detect the bug after 1000 executions with \te
   \caption{Distribution of required number of iterations to detect the bug for each tool}
   \label{fig:runs}
 \end{figure}
-
-
-\begin{table*}[]
-\caption{Output of each debugging tool after experimenting on bug for GoKer \cite{yuan-gobench-cgo21} blocking bugs. For each tool, here is how to interprete its output: Detected bug (minimum \# of executions required) -- \textbf{X (1000)} means that the tool is not able to detect any bug after 1000 executions. \textbf{PDL}: Partial Deadlock, \textbf{GDL}: Global Deadlock, \textbf{PDL-k}: Partial Deadlock with \textit{k} number of goroutines leaked. \textbf{DL}: A warning for potential deadlock is issued. \textbf{TO/GDL}: The global deadlock is detected because none of goroutines made any progress after 20 seconds, \textbf{CRASH}: The execution paniced because of a flaw in the execution (e.g., send on closed channels panic), \textbf{HANG}: The tool halt for more than 10 minutes.}
-\centering
-\scalebox{0.75}{
-    \input{tabs/comparison}
-  }
-\label{tab:comarison}
-\end{table*}
