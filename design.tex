@@ -1,14 +1,16 @@
 %As mentioned in section \ref{sec:bg}, the built-in deadlock detector (if not disabled \cite{go-netDeadlock}) only detects global deadlocks where the main goroutine is blocked and ignores other goroutines' states. For instance, more than 70\% of blocking bugs (partial deadlocks and leaks) in GoKer \cite{yuan-gobench-cgo21} are not detectable by the built-in deadlock detector.
 %
-As we have shown in our previous work \cite{parlot,difftrace}, dynamic tracing is an effective way in debugging large-scale applications.
+As we have shown in our previous work \cite{parlot,difftrace},
+dynamic tracing is effective n debugging large-scale applications.
 %
 We found that Go execution tracer \cite{go-cmd-trace} gives detailed information about the \textit{performance} behavior during execution.
 %
 Its tracing capability is compiled into all programs always through the runtime and is enabled on demand -- when tracing is disabled, it has minimal runtime overhead \cite{go-exec-tracer-doc}.
 %
-An execution model from the interactions of processors, OS threads, goroutines, the scheduler, and the garbage collection mechanism is constructible from the trace to identify poor parallelization and resource contention.
+An execution model from the interactions of processors, OS threads, goroutines, the scheduler, and the garbage collection mechanism is constructible from the trace to identify poor parallelization and resource contention.\ggcmtside{Why say this?}
 %
-By enriching the tracer package with concurrency events, we place the missing pieces for human debuggers and analysis tools to automatically obtain comprehensive models from the dynamic concurrency behavior of programs with minimal overhead.
+By enriching the tracer package with concurrency events, we place the missing pieces for human debuggers\ggcmtside{strange}
+and analysis tools to automatically obtain comprehensive models from the dynamic concurrency behavior of programs with minimal overhead.
 %
 In the remainder of this section, we briefly describe the enhancement that we made to the tracer package to automatically obtain Execution Concurrency Trace (ECT) from program execution reflecting accurate behavior of Go concurrency primitives in section \ref{sec:ect} (overhead and scalability report is available in \cite{ect-arxiv}).
 %
@@ -44,11 +46,14 @@ According to \cite{tu-concurrentBugs-asplos19,yuan-gobench-cgo21}, the primary c
 %
 However, the standard tracer package does not capture concurrency primitive usage events as it aims more on performance bugs.
 %
-Although the event vocabulary is rich enough to model comprehensive goroutine latency and blocking behavior accurately, the tracer package cannot answer questions such as do the synchronization constructs work as expected? In the leaky interleaving of listing \ref{listing:moby28462.minipage}, which goroutine is holding the lock that \texttt{Monitor} tends to acquire? What are the resources that contribute to this circular wait? In the successful interleaving of listing \ref{listing:moby28462.minipage}, is there any \textit{potential flaw} that did not manifest?
+Although the event vocabulary is rich enough to model comprehensive goroutine latency and blocking behavior accurately, the tracer package cannot answer questions such as do the synchronization constructs work as expected? In the leaky
+interleaving\ggcmtside{what is a leaky interleaving?}
+of listing \ref{listing:moby28462.minipage}, which goroutine is holding the lock that \texttt{Monitor} tends to acquire? What are the resources that contribute to this circular wait? In the successful interleaving of listing \ref{listing:moby28462.minipage}, is there any \textit{potential flaw} that did not manifest?
 
 %
 %\stcmtside{why we think dynamic tracing is effective}
-As we mentioned earlier, dynamic tracing provides a practical and uniform way to answer the above debugging questions and track multiple program facets during execution.
+As we mentioned earlier, dynamic tracing provides a practical and uniform way to answer the above debugging questions and track multiple program facets during
+execution.\ggcmtside{redundant}
 %
 In the context of Go, we implemented a framework that automatically captures dynamic concurrency behavior exploiting an enhancement to the tracer package.
 %
