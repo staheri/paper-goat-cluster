@@ -1,22 +1,32 @@
+%\input{tabs/moby28462}
+\input{tabs/moby28462_minipage}
+%\input{tabs/moby28462_minipage_codeOnly}
+
 \subsection{Go Concurrency}
 \label{sec:goConcurrency}
 %
-%\stcmtside{Go concurrency introduction}
-Go introduces a new concurrency model, mixing shared-memory and message-passing concepts with an ad-hoc scheduler:
+Go introduces a new concurrency model, mixing shared-memory features of languages like Java/C/C++ and message-passing concepts such as Erlang's, with an ad-hoc scheduler that orchestrates Go's concurrent components interactions while shielding the user from many low-level aspects of the runtime.
+%
+The language is equipped with a rich vocabulary of \textit{serialization} features to facilitate the memory model constraints~\cite{go-memModel}; they include synchronous and asynchronous communication, memory protection, and barriers for efficient synchronization:
 \begin{itemize}
     \item \textbf{Goroutines} are functions that execute concurrently on logical processors having their own stack.
-    \item \textbf{Channels} are typed conduits through which goroutines communicate.  Channels are unbuffered by default, providing synchronous (rendezvous) messaging between goroutines.
+    \item \textbf{Channels} are typed conduits through which goroutines communicate.  Channels are unbuffered by default, providing synchronous (rendezvous) or asynchronous (via buffered channels) messaging between goroutines.
     \item \textbf{Synchronization} features such as \textit{(RW)mutex}, \textit{waitGroup}, \textit{conditional variables}, \textit{select}, and \textit{context} are included in the language to provide more and flexible synchronization, data access serialization, memory protection, and error handling.
     \item \textbf{Scheduler} maintains goroutines in FIFO queues and binds them on OS threads to execute on processing cores.
 \end{itemize}
 
-\ignore{Due to the unpredictable interaction between components and inherent non-determinism introduced by the scheduler, concurrent programming and debugging has traditionally been challenging.
-%
-}
 
-%\input{tabs/moby28462}
-\input{tabs/moby28462_minipage}
-%\input{tabs/moby28462_minipage_codeOnly}
+This design facilitates the construction of data flow models that efficiently utilize multiple CPU cores and encourages developers to \textit{share memory through communication} for safe and straightforward concurrency and parallelism.
+%
+This rich mixture of features has, unfortunately, greatly exacerbated the complexity of debugging.
+%
+In fact, the popularity of Go has outpaced its debugging support~\cite{go-survey,tu-concurrentBugs-asplos19,yuan-gobench-cgo21}.
+%
+There are some encouraging developments in support of debugging, such as a data race checker \cite{go-race-blog} that has now become a standard feature of Go, and has helped catch many a bug.
+%
+However, the support for blocking bugs such as deadlocks and Go-specific bug-hunting support for Go idioms (e.g., misuse of channels and locks) remain insufficiently addressed.
+
+
 
 
 %\stcmtside{Explaining the example to motivate}
@@ -47,11 +57,11 @@ Since there is no blocking instruction in the \texttt{main} goroutine in listing
 However, this program suffers from a common bug in concurrent Go where one or more goroutines \textit{leak} (\ie \textit{partial deadlock}) from the execution (\ie never reach their end states).
 
 %\stcmtside{Explain the deadlock (leak) situation that might get overlooked}
-Due to the non-determinism introduced by the runtime scheduler and application-level random features like \texttt{select}, many interleavings are feasible for concurrent execution of simple programs such as listing \ref{listing:moby28462.minipage}.
+%Due to the non-determinism introduced by the runtime scheduler and application-level random features like \texttt{select}, many interleavings are feasible for concurrent execution of simple programs such as listing \ref{listing:moby28462.minipage}.
 %
-The right side of the listing displays a successful and a \textit{leaky} interleaving of the program.
+The right side of the listing displays a successful run and a leak situation of the program.
 %
-In the leaky scenario, first, the \texttt{Monitor} goroutine executes the \texttt{select} statement and, based on the available cases, picks the default case to execute.
+In the leak situation, first, the \texttt{Monitor} goroutine executes the \texttt{select} statement and, based on the available cases, picks the default case to execute.
 %
 Right before the execution of mutex lock (line \ref{bugListing:Monitor_case_def_lock}), the scheduler context-switches and the \texttt{StatusChange} goroutine starts its execution through which it holds the lock and blocks on sending to the channel (line \ref{bugListing:statChange_send}) since there is no receiver on that channel.
 %
@@ -59,12 +69,12 @@ Upon blocking on send, the scheduler transfers back the control to the \texttt{M
 %
 The circular wait between the container mutex and channel prevents both spawned goroutines from reaching their end states and leaves the program in an unnoticed deadlock situation.
 %
-\stcmtside{The thirst for novel and scalable debuggers}
-Widely used deadlock detectors such as Goodlock \cite{havelund-goodlock-spin00} are not applicable in Go since causes of Go deadlocks are resources (\eg locking a locked mutex) or communication (\eg sending on a full channel), or a combination of them (\eg leaky interleaving of listing \ref{listing:moby28462.minipage}).
+%\stcmtside{The thirst for novel and scalable debuggers}
+%Widely used deadlock detectors such as Goodlock \cite{havelund-goodlock-spin00} are not applicable in Go since causes of Go deadlocks are resources (\eg locking a locked mutex) or communication (\eg sending on a full channel), or a combination of them (\eg leaky interleaving of listing \ref{listing:moby28462.minipage}).
 %
-In addition, due to the light-weight nature of goroutines, it is not uncommon to spawn thousands of goroutines in production software systems.
+%In addition, due to the light-weight nature of goroutines, it is not uncommon to spawn thousands of goroutines in production software systems.
 %
-Hence,  novel and scalable techniques are needed to enable realistic modeling of program behavior during execution.
+%Hence,  novel and scalable techniques are needed to enable realistic modeling of program behavior during execution.
 %
 
 
@@ -72,110 +82,84 @@ Hence,  novel and scalable techniques are needed to enable realistic modeling of
 \label{sec:goBugs}
 Based on a proposed bug taxonomy for Go \cite{tu-concurrentBugs-asplos19}, bugs are categorized separately based on their \textit{causes} (shared-memory vs. message-passing) and \textit{symptoms} (blocking vs. non-blocking).
 %
-Blocking bugs historically refer to situations where one or more processing units (\eg goroutines) are blocked, waiting for an external signal to resume (\eg deadlock situation in listing \ref{listing:moby28462_minipage}).
+Blocking bugs historically refer to situations where one or more processing units (\eg goroutines) are blocked, waiting for an external signal to resume (\eg leak situation in listing \ref{listing:moby28462.minipage}.
 %
 The observed causes of such blocking flaw in the context of Go are as follows:
 
 \begin{itemize}
-  \item \textit{Resource deadlocks}: Go inherits resource deadlocks from multithreaded languages like Java and C/Pthreads where threads (goroutine in Go) are trapped in a circular wait for the resource (\eg mutex, conditional variable, semaphore, etc.) that is holded by other threads (goroutines).
+  \item \textit{Resource deadlocks}: Go inherits resource deadlocks from multithreaded languages like Java and C/Pthreads where goroutines are trapped in a circular wait for the resource (\eg mutex) that is held by other goroutines.
   \item \textit{Communication deadlocks}: Synchronized (unbuffered) channels transmit values from one goroutine to another in a rendezvous fashion. The sender (or receiver) blocks until the receiver (or sender) is ready to receive (send). Misuse of channel operations might result in one or more goroutines waiting for a sender/receiver to unblock them forever.
-  \item \textit{Mixed deadlocks}: There are situations when goroutine $A$ is holding a resource (\eg locked a mutex) while blocking on a channel receive and goroutine $B$ is the sender (unblocker) for $A$ but it requires to hold the mutex lock before sending to $A$.
+  \item \textit{Mixed deadlocks}: The leak situation in listing \ref{listing:moby28462.minipage} is the example of such deadlocks where one goroutine is blocked on acquiring a resource that is held by another goroutine which is blocked on communication.
 \end{itemize}
 \stcmtside{about race}
 Go inherited traditional non-blocking bugs such as data races and atomicity violations from older concurrent languages while introducing new bug idioms due to its new concepts such as anonymous functions \cite{tu-concurrentBugs-asplos19}.
 %
-\noindent{\bf Sources of non-determinism:\/}
-In addition to non-deterministic nature of concurrent languages, Go introduces some level of non-determinism in application level.
-%
-The \texttt{select} statement gives the flexibility to the program design to randomly select \stcmt{I will complete this about select}
 
-\subsection{Current Correctness Tooling}
-
-Decades of research effort have been dedicated to the logical and performance correctness of concurrent and parallel programs.
+\noindent{\bf Application-level non-determinism:\/}
+In addition to the non-deterministic nature of concurrent languages caused by the scheduler and interaction between concurrent components, Go introduces some level of non-determinism at the application level.
 %
-For CSP-based concurrent languages like Go, static (source-level) analysis methods \cite{ng-dl-cc16,lange-fence-popl17,lange-staticType-icse18} tend to assure bug freedom and verify safety properties through abstractions like session types and choreography synthesis.
+The \textit{select-case} statement (similar to switch-case) allows the goroutine to wait on multiple channel operations.
 %
-Ng and Yoshida \cite{ng-dl-cc16} first proposed a static tool to detect global deadlock in Go programs using choreography synthesis.
+Go runtime picks one case pseudo-randomly among available cases of selects (\ie channel sends and receives that are ready to execute without blocking).
 %
-Later, Stadtmuller et al. \cite{stadtmuller-minigo-aplas16} proposed a static trace-based global detection approach based on forkable regular expressions.
+If none of the cases are ready, the executing goroutine is blocked unless there is a \textit{default} case.
 %
-Lange et al. proposed more static verification frameworks for checking channel safety, and liveness \cite{lange-fence-popl17}, and behavioral model checking \cite{lange-staticType-icse18}.
+The default case makes the select non-blocking and prevents the goroutine from waiting for unavailable communications.
 %
-Both methods approximate Go programs with session types and behavioral contracts extracted from their SSA intermediate representation.
+Such random behavior expands the schedule-space exploration, especially when select statements are used in nested fashion within nested loops.
 %
-The mentioned work has limitations for handling dynamic (e.g., in-loop) goroutine or channel creation.
+Hence, root-causing the misbehaved execution of a buggy program becomes more challenging.
 %
-They also do not scale and are impractical in real-world programs due to the state explosion problem and lack of proper front-end interface \cite{yuan-gobench-cgo21}.
-%
-Besides, similar to other static analysis methods, they often suffer from false positives due to conservative constraints.
-
-%
-Dynamic (runtime-level) analysis approaches \cite{sulzmann-twophase-2018,dilley-gomela-corr2020} rely on code instrumentation and program rewrites to obtain and analyze an \textit{execution model}.
-%
-Zhao et al. \cite{zhao-occam97} introduced a runtime monitoring approach for deadlock detection for Occam programs based on wait-for graphs and some heuristics. Occam is a concurrent language based on CSP semantics, and similar to Go, it uses channels to establish communication between processes.
-%
-Sulzmann and Stadtmuller proposed a dynamic verification approach for synchronous (unbuffered) channels \cite{sulzmann-corr17}, and a vector-clock-based approach for asynchronous channels \cite{sulzmann-twophase-2018}.
-%
-Although they may support a larger subset of the Go language, they only focus on channels as the root cause of deadlocks and evaluated only on relatively small examples.
-%
-Also, they usually do not scale for real-world Go applications with thousands of goroutines and LOC \cite{dilley-empirical-saner19}.
-%
-
-Standard Go comes with a few dynamic analysis tools. For example, the \textit{race detector} \cite{go-race-blog} which is basically a wrapper around ThreadSanitizer \cite{konstantin-tsan-wbia09}, tracks memory accesses and detect races that happened during execution.
-%
-A few other facilities for code coverage measurement, profiling, and tracing \cite{go-package-trace} are provided to deliver insight into the testing quality and performance behavior.
-%
-The built-in race detector \cite{go-race-blog}, despite its limitations (\eg supporting up to 8192 goroutines), has proved to be effective in dynamically detecting data races in most cases quickly.
-%
-In this work, our focus is on blocking bugs as they have received little attention.
-
-\stcmtside{motivates dynamic tracing}
-It is crucial for debuggers and software analysis tools to construct their abstract models as close as possible to the actual program execution context.
-%
-For multi-threaded Java, effective dynamic methods like ConTest \cite{contest-jgi01}, Goodlock \cite{havelund-goodlock-spin00} and CalFuzzer \cite{joshi-calfuzzer} maintain a model built from \textit{synchronization constructs} of the program, as the main ingredient of dynamic concurrency model.
-%
-Our investigations state that such comprehensive dynamic data collection mechanisms to abstract reliable concurrency models for Go applications do not exist.
-%
-Profilers \cite{go-profile-blog} give up some accuracy by approximating the dynamic behavior through aggregated samples from counters,
-%
-while distributed (decentralized) tracing systems \cite{dapper} gather logs and information (\eg HTTP request latency) through source instrumentation and an underlying network.
-%
-We explain the enhancement that we made to the original tracer package of Go to obtain accurate reflection of dynamic concurrent behavior of Go applications in section \ref{sec:design}
-%
+Our experiments/observations (section or table \ref{} **FIXME**) demonstrate that select statements are in the core of rare bugs.
 
 
-\subsection{Accelerating bug exposure}
+\subsection{Execution Concurrency Tracing (ECT)}
+\label{sec:ect}
+The primary cause of most real-world concurrent bugs is the misuse of concurrency features like channels, mutexes, and waitGroups (table \ref{tab:comparison}).
+%
+To gain insight into the behavior of concurrency features during execution, we equipped \goat with a tracing mechanism~\cite{ect-arxiv}, which is an extension to the Go built-in tracer package~\cite{go-cmd-trace}.
+%
+The tracing capability is compiled into all programs always through the runtime and is enabled on demand -- when tracing is disabled, it has minimal runtime overhead \cite{go-exec-tracer-doc}.
+%
+%We chose the tracer package to enhance because it 1) is already compiled into the runtime, 2) adds minimal overhead, and 3) only lacks some pieces allowing the construction of an accurate concurrency model.
+%
 
-\stcmt{
-- background on testing, schedule-space exploration, accelrating bug Exposure
-}
-
-
-\stcmt{related work for testing and schedule-exploration}
-Systematic testing combines ideas from static and dynamic approaches to reduce the state space and reflect realistic behavior.
+\textit{Execution concurrency trace} (ECT) is a totally ordered \textit{sequence} of events in which the order is approximated through a central clock with nanosecond precision.
 %
-Assuming the scheduler causes concurrency bugs (and not the program input), they may not manifest during conventional testing and difficult to reproduce, both due to non-deterministic decisions that the scheduler makes.
+ECT also contains the call-stack for each event, enabling a direct mapping of events to source-line numbers.
 %
-Stress testing the scheduler to examine possible interleaving is useful to expose hidden bugs, but they are exponentially expensive relative to the number of concurrent units.
+The alphabet of ECT is total of 63 events -- 49 from original tracer package \cite{goParserSource}, categorized and summarized in table \ref{tab:events} and 14 additional events that we added to capture concurrency usage events:
 %
-Researchers have applied different methods \cite{thomson-concurrencyTesting-ppopp14} to reduce the interleaving space to explore effectively and efficiently.
-%
-Delay-bounded \cite{emmi-delayBounded-popl11,burckhardt-depthBug-asplos10} and preemption-bounded \cite{madanlal-preemptionBound-pldi07} techniques systematically ``fuzz'' the scheduler to equally and fairly cover feasible interleaving.
-%
-Other tools like Maple \cite{yu-maple-oopsla12}, CalFuzzer \cite{joshi-calfuzzer},  and ConTest \cite{contest-jgi01,edelstein2003contest} \textit{actively} control the scheduler to maximise a pre-defined concurrency coverage criterion \cite{hong-syncTesting-issta12} or the probability of bug exposure \cite{burckhardt-depthBug-asplos10}.
-
-Adopting ideas from existing concurrency testing tools, we systematically navigate the scheduler towards executing likely-erroneous interleaving.
-%
-We first identify the usage of concurrency primitives (\textit{critical points}) in the program using a tracing mechanism.
-%
-We automatically inject random delays around the critical points to increase the probability of bug exposure (more in section \ref{sec:design}).
-
-\stcmt{maybe one paragraph about coverage}
-\stcmt{intro to coverage}
 \begin{itemize}
-  \item We also have defined a coverage metric/model/criterion To measure the quality of tests that GOAT is able to perform.
-  %
-  \item Our experiments show that GOAT is effecive in detecting 100\% of blocking bugs in GoKer bench.
-  \item Our experiments also show that the coverage metrics that we designed have linear correlation with the rate of bug exposure (i.e., number of testing runs that it takes for the buggy interleaving to occur) for rare bugs.
-  \item While these ideas have been developed and proved to be effective in other contexts \cite{burckhardt-depthBug-asplos10,emmi-delayBounded-popl11,madanlal-preemptionBound-pldi07}, our contribution is to show these ideas in the context of a modern language with growing industry-side adoption.
+    \item \textbf{Channel:} For each channel operation (make, send, receive, close), ECT includes an event with a unique id assigned to each channel.
+    \item \textbf{(RW)Mutex, WaitGroup \& Conditional Variables:} Similar to channels, we assign a unique id to each concurrency object and emit an event for each of their operations (lock, unlock, rlock, runlock, add, wait, signal, broadcast).
+    \item \textbf{Select \& Schedule:} The scheduler and the \textit{select} structure introduce non-determinism to the execution. We keep track of the decisions made by the scheduler and select statements to obtain an accurate decision path during execution.
 \end{itemize}
+
+%\stcmtside{how ECT captures concurrency blocking behavior}
+
+
+%
+For each blocking operation (channels \textit{sends}/\textit{recvs}, mutex \textit{locks}, waitGroup/conditional variable \textit{wait} and \textit{select} (when none of the cases are available)), ECT captures a pair of pre-operation and post-operation events to distinguish between the \textit{request for action} and \textit{completion of action}.
+%
+Hence, ECT is especially effective for debugging because it enables modeling the blocking state of program execution at any given step of execution.
+%
+More details about the implementation of trace package enhancement and scalability report are available in \cite{ect-arxiv}
+
+\begin{table}[]
+    \centering
+        \begin{tabular}{|l|l|}
+        \hline
+        \rowcolor[HTML]{C0C0C0}
+        \multicolumn{1}{|c|}{\cellcolor[HTML]{C0C0C0}\textbf{Category}} & \multicolumn{1}{c|}{\cellcolor[HTML]{C0C0C0}\textbf{Description}} \\ \hline
+        Process & Indication of process/thread start and stop \\ \hline
+        GC/Mem & Garbage collection and memory operation events\\ \hline
+        Goroutine & Goroutines events: create, block, start, stop, end, etc. \\ \hline
+        Syscall & Interactions with system calls \\ \hline
+        Users & User annotated regions and tasks (for bounded tracing) \\ \hline
+        Misc & System related events like futile wakeup or timers \\ \hline
+        \end{tabular}
+
+    \caption{Event categories by the Go execution tracer}
+    \label{tab:events}
+\end{table}

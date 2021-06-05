@@ -24,7 +24,7 @@ For example, the synchronization coverage model in \cite{edelstein2003contest} d
 %
 The purpose of this requirement is to check if a test can report when there is a lock contention for two or more threads entering the synchronized block.
 %
-That is, thread A is either \textit{blocked} from entering the synchronization block or \textit{blocking} other threads (e.g., thread B) from entering by holding the lock.
+That is, a thread is either \textit{blocked} from entering the synchronization block or \textit{blocking} other threads from entering by holding the lock.
 %
 
 Proposed concurrency coverage metrics are mostly in the context of Java and C/Pthreads and are not directly applicable to languages like Go as Go has different concurrncy primitives and semantics.
@@ -111,6 +111,16 @@ Two goroutines $G_m$ and $G_n$ in the tests $t_i$ and $t_j$ are \textit{equivale
 
 
 \subsection{Evaluation}
+We picked two representative bug kernels \texttt{etcd7443} and \texttt{kubernetes11298} to evaluate the coverage idea on them as they
+%
+They both have extensive use of channels, mutexes, conditional variables, nested selects within nested for loops and the buggy interleaving is proved to be rare to happen.
+%
+figures \ref{etcd_coverage} and \ref{fig:kubernetes_coverage} show the gradual increase in coverage percentage during execution runs for different values of D.
+%
+Recall that D is the bound on the number of yields that we inject to the native execution of a given program to perturb the scheduler around concurrency usages.
+%
+These figures show that
+%
 
 \begin{figure}
 \centering
