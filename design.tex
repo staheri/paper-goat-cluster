@@ -1,15 +1,188 @@
 %As mentioned in section \ref{sec:bg}, the built-in deadlock detector (if not disabled \cite{go-netDeadlock}) only detects global deadlocks where the main goroutine is blocked and ignores other goroutines' states. For instance, more than 70\% of blocking bugs (partial deadlocks and leaks) in GoKer \cite{yuan-gobench-cgo21} are not detectable by the built-in deadlock detector.
 %
+\subsection{Overview}
+\label{sec:overview}
+Figure \ref{fig:goat_workflow} displays the workflow of \goat to achieve objectives that introduced in section \ref{sec:intro} towards testing and debugging blocking bugs.
+%
+Given a program \textbf{P} (\ie, a set of Go source files with a \textit{main} function), \goat automatically instruments \textbf{P} and constructs static and dynamic models of execution for thorough testing and analysis.
+%
+\goat's work starts with parsing source files to identify and instrument the location of concurrency primitive usages in \textbf{P} (section \ref{sec:static_analysis}).
+%
+We inject \goat handlers around such locations to effectively perturb the blocking behavior of \textbf{P}.
+%
+\goat also constructs a fixed model from the concurrency usage to maintain coverage measurements during testing iterations (section \ref{sec:coverage}).
+%
+The instrumented \textbf{P} is then built and executed in the \goat runtime that supports execution concurrency tracing and schedule-space exploration (section \ref{sec:dynamic_analysis}).
+%
+Once the execution of \textbf{P} terminates (\eg, successfully exits , fails, times out), an ECT (execution concurrency trace) containing sequence of executed events is generated to get analyzed in offline (section \ref{sec:offline_analysis}).
+%
+If we detect a bug or the coverage reaches a threshold, \goat terminates the process and generates reports for the user (section \ref{sec:reports}). Otherwise, \goat continues the testing iteration until the termination condition met.
+%
+The remainder of this section describe the design and implementation of each component of \goat.
+
+\subsection{Static Analysis}
+\label{sec:static_analysis}
+The concurrent behavior of P is defined by the behavior of P's concurrency primitives. 
+%
+Thus, \goat identifies the source locations (file and line number) of \textit{concurrency primitive usages} to construct a fixed model for two main purposes
+\goat obtains the \textit{abstract syntax tree} (AST) for each of source files in \textbf{P} using the Go AST package~\cite{go-package-ast}.
+%
+By traversing the ASTs of \textbf{P}, \goat identifies the source locations (file and line number) of \textit{concurrency usages} to construct a fixed model for two measuring coverage.
+%
+In addition, the identified locations are the candidates for delay injection.
+%
+We also identify the main function during AST traversal to equip \textbf{P} with concurrency tracing mechanism.
+
+\subsubsection{Identify Concurrency Usage}
+We define \textit{concurrency usage} (CU) as a triple of $(f,l,k)$ where $f$ is the file name, $l$ is the line number and $k$ is the kind of concurrency primitive used in the code location.
+Kind $k\in$ \texttt{Channel} $\cup$ \texttt{Sync} $\cup$ \texttt{Go} where:
+\begin{itemize}
+  \item \texttt{Channel} = \{\texttt{send}, \texttt{receive}, \texttt{close}\}
+  \item \texttt{Sync} = \{\texttt{lock}, \texttt{unlock}, \texttt{wait}, \texttt{add}, \texttt{done}, \texttt{signal}, \texttt{broadcast}\}
+  \item \texttt{Go} = \{\texttt{go}, \texttt{select}, \texttt{range}\}
+\end{itemize}
+
+The first column of table \ref{tab:moby_cov_table} shows the critical points extracted from program in listing \ref{listing:moby28462.minipage}.
+%
+\goat injects its handlers before CU points are the entry points to inject delay handlers of \goat to inject scheduler perturbation handlers before these points.
+
+\subsection{Coverage}
+\label{sec:coverage}
+To demonstrate that testing has been thorough, \textit{coverage metrics} are defined to measure the progress of tests and specify testing termination condition.
+%
+Coverage metric for the set of testing executions $\mathcal{T}$ is a set of \textit{requirements} $\mathcal{R}$ that should get covered during testing iterations.
+%
+We say requirement $R_i$ is covered during testing iteration $t \in \mathcal{T}$ if we can correlate an \textit{action} during execution of $t$ to $R_i$.
+%
+For example, in \textit{statement coverage}, which is a widely-used metric in testing sequential software, $R$ is the set of source locations (file and line numbers) in the target program
+%
+$R_i$ is covered by test execution $t$ if the statement at location $R_i$ is executed in $t$.
+%
+The \textit{coverage percentage} of a test $\mathcal{T}$ is the ratio of the requirements covered by at least one execution over the number of all requirements ($|R|$).
+
+As explained in section \ref{sec:bg}, concurrent software testing frameworks perform testing iterations to explore the schedule-space and expose flaws.
+%
+Depending on the class of target bug, different coverage metrics are proposed and used for concurrent software testing.
+%
+\textit{Synchronization} coverage metrics such as \textit{blocking-blocked} \cite{edelstein2003contest}, \textit{blocked-pair-follows} \cite{trainin-followsCoverage-padtad09} and \textit{synchronization-pair} \cite{hong-syncTesting-issta12} defined requirements to cover during testing for exposing blocking bugs (\eg deadlocks).
+%
+%\textit{Memory access} coverage metrics such as PSet \cite{yu-pser-isca09} and def-use \cite{yang-defuse-issta98} focuses on data-access related bugs such as atomicity violation or data races.
+%
+For example, the synchronization coverage model in \cite{edelstein2003contest} defines \textit{blocking} and \textit{blocked} requirements per each synchronized block (\ie mutually exclusive section of the code that is protected by a lock).
+%
+The purpose of this requirement is to check if a test can report when there is a lock contention for two or more threads entering the synchronized block.
+%
+That is, a thread is either \textit{blocked} from entering the synchronization block or \textit{blocking} other threads from entering by holding the lock.
+%
+
+\subsubsection{Coverage Requirements}
+\label{sec:coverage_requirements}
+Proposed concurrency coverage metrics are mostly in the context of Java and C/Pthreads and are not directly applicable to languages like Go as Go has different concurrncy primitives and semantics.
+%
+Bron et. al,\cite{bron-appSyncCov-ppopp05} enumerates four major characteristics for coverage metrics to gain acceptance:
+\begin{itemize}
+  \item \textbf{Fixed model:} The metric should be well-understood by the developer or tester. A static model of requirements from target program should be constructed by instrumenting the source-code. The model should maintain covered requirements during testing executions.
+  \item \textbf{Coverable and measurable requirements:} The absolute majority of reqiurements should be realistic enough to be \textit{coverable} during testing. For a few that are not coverable (due to program semantics) or not \textit{measurable} (because of technical limitations), the devloper should be aware of the reason.
+  \item \textbf{Actions for uncovered requirements:} After testing terminates, every uncovered requirement should yield an action (\eg extending testing iterations or removing dead code from the program thus removing uncoverable requirements)
+  \item \textbf{Coverage satisfaction:} Some action should be taken upon reaching a threshold of coverage percentage (e.g., testing phase termination when reaching 100\% statement coverage)
+\end{itemize}
+
+Defining a new coverage metric to satisfy above characteristics requires an accurate and proper mental model of target bugs.
+%
+Based on our observations from execution of Go applications and bug kernels on the behavior of concurrency primitives, we define a set of coverage requirements (summarized in table \ref{tab:cov_req}):
+%
+\begin{itemize}
+  \item \textbf{Req1 (Send/Recv):} \{\texttt{blocked}, \texttt{unblocking}, \texttt{NOP}\} -- Goroutine $G_1$ is either \textit{blocked} on a channel send (receive) if the receiver (sender) goroutine $G_2$ is not ready or \textit{unblocking} the waiting receiver (sender) goroutine $G_2$. A channel send or receive might also be neither blocked nor unblocking (NOP) for buffered channels.
+  \item \textbf{Req2 (Select-Case):} \{\texttt{blocked}, \texttt{unblocking}, \texttt{NOP}\} $\times$ \{\texttt{case}$_i$\} -- cases of select statements are channel sends and recives (or default case for non-blocking selects). For all select statements that has no default case, we obtain the cases of each select statement at runtime and maintain an instance of Req1 per case.
+  \item \textbf{Req3 (Lock):} \{\texttt{blocked}, \texttt{blocking}\} -- Goroutine $G_i$ is either \textit{blocked} when locking a mutex because another goroutine has locked the mutex or \textit{blocking} other goroutines from acquiring the mutex lock.
+  \item \textbf{Req4 (Unblocking):} \{\texttt{unblocking}, \texttt{NOP}\} -- The goroutine that is performing channel close, mutex unlock, conditional variable signal and broadcast, waitGroup done and non-blocking select case (send or receive) has two kinds of behavior. They either \textit{unblock} one or more waiting goroutines or has no effect (NOP).
+  \item \textbf{Req5-Go:} \{\texttt{NOP}\} -- We emit a NOP action for each goroutine creation to indicate that it is covered during testing.
+\end{itemize}
 
 
-\subsection{Deadlock Detection}
-\label{sec:dld}
+These requirements are effective because with the help of \goat infrastructure, they satisfy the characteristics of an ``acceptable'' coverage metric:
+\begin{itemize}
+  \item A \textit{fixed concurrency model} from target application is statically obtained by identifying CU points.
+  \item We can measure whether the requirement has been covered by analyzing the test ECT. By maintaining a global data structure during execution of all $t \in \mathcal{T}$, we can evaluate the coverability of proposed requirements
+  \item Every uncovered requirement report something meaningful. For example, if a send is always performing as \textit{unblocking} and never as \textit{blocked}, which means that receiver of this send always performs receive before sender reaches its send statement. In other words, the receive action \textit{always happen-before} send action. Perhaps this pattern of communication is part of the program semantic and matches developer's expectations (e.g., a set of goroutines are listening on a channel to perform non-frequent requests). Otherwise, it reflects a bug or flaw in the program design.
+  \item Since \goat is able to detect occured blocking bugs and also maintain a global coverage model during testing iterations, testing phase can terminate either by detection of a bug or reaching a coverage percentage threshold.
+\end{itemize}
+
+
+\subsection{Dynamic Analysis}
+\label{sec:dynamic_analysis}
+The primary cause of most real-world concurrent bugs is the misuse of concurrency features like channels, mutexes, and waitGroups (table \ref{tab:comparison}).
+%
+To gain insight into the behavior of concurrency features during execution, we equipped \goat with a tracing mechanism~\cite{ect-arxiv}, which is an extension to the Go built-in tracer package~\cite{go-cmd-trace}.
+%
+The tracing capability is compiled into all programs always through the runtime and is enabled on demand -- when tracing is disabled, it has minimal runtime overhead \cite{go-exec-tracer-doc}.
+%
+We chose the tracer package to enhance because it 1) is already compiled into the runtime, 2) adds minimal overhead, and 3) only lacks some pieces allowing the construction of an accurate concurrency model.
+%
+The concurrency tracing capability is added to the original Go runtime through a one-time patch~\cite{ect-patch}.
+
+\subsubsection{Execution Concurrency Tracing (ECT)}
+\textit{Execution concurrency trace} (ECT) is a totally ordered \textit{sequence} of events in which the order is approximated through a central clock with nanosecond precision.
+%
+ECT also contains the call-stack for each event, enabling a direct mapping of events to source-line numbers.
+%
+The alphabet of ECT is total of 63 events -- 49 from original tracer package \cite{goParserSource}, categorized and summarized in table \ref{tab:events} and 14 additional events that we added to capture concurrency usage events:
+%
+\begin{itemize}
+    \item \textbf{Channel:} For each channel operation (make, send, receive, close), ECT includes an event with a unique id assigned to each channel.
+    \item \textbf{(RW)Mutex, WaitGroup \& Conditional Variables:} Similar to channels, we assign a unique id to each concurrency object and emit an event for each of their operations (lock, unlock, rlock, runlock, add, wait, signal, broadcast).
+    \item \textbf{Select \& Schedule:} The scheduler and the \textit{select} structure introduce non-determinism to the execution. We keep track of the decisions made by the scheduler and select statements to obtain an accurate decision path during execution.
+\end{itemize}
+
+%\stcmtside{how ECT captures concurrency blocking behavior}
+
+
+%
+For each blocking operation (channels \textit{sends}/\textit{recvs}, mutex \textit{locks}, waitGroup/conditional variable \textit{wait} and \textit{select} (when none of the cases are available)), ECT captures a pair of pre-operation and post-operation events to distinguish between the \textit{request for action} and \textit{completion of action}.
+%
+Hence, ECT is especially effective for debugging because it enables modeling the blocking state of program execution at any given step of execution.
+%
+More details about the implementation of trace package enhancement and scalability report are available in \cite{ect-arxiv}
+
+\begin{table}[]
+    \centering
+        \begin{tabular}{|l|l|}
+        \hline
+        \rowcolor[HTML]{C0C0C0}
+        \multicolumn{1}{|c|}{\cellcolor[HTML]{C0C0C0}\textbf{Category}} & \multicolumn{1}{c|}{\cellcolor[HTML]{C0C0C0}\textbf{Description}} \\ \hline
+        Process & Indication of process/thread start and stop \\ \hline
+        GC/Mem & Garbage collection and memory operation events\\ \hline
+        Goroutine & Goroutines events: create, block, start, stop, end, etc. \\ \hline
+        Syscall & Interactions with system calls \\ \hline
+        Users & User annotated regions and tasks (for bounded tracing) \\ \hline
+        Misc & System related events like futile wakeup or timers \\ \hline
+        \end{tabular}
+
+    \caption{Event categories by the Go execution tracer}
+    \label{tab:events}
+\end{table}
+
+\subsubsection{\goat Engine}
+To equip the \textbf{P} with concurrency tracing mechanism, we identify the main function and inject three lines of code to its beginning during AST traversal:
+\begin{itemize}
+  \item \texttt{goat\_done := goat.Start()} initilizes \goat, enables tracing, and returns a channel as conduit between application space and \goat engine.
+  \item \texttt{go goat.Watch(goat\_done)} spawns a new goroutine as a watcher for liveness of the program (in case of global deadlocks or infinite loop). The watcher goroutine either receives from \texttt{goat\_done} and sends back an ack signal, or timeouts and stop tracing, and terminates.
+  \item \texttt{defer goat.Stop(goat\_done)} sends a value to the watcher goroutine after main returns and signals that the program is finished. Then it waits to receive the signal from watcher, then stops tracing and terminates.
+\end{itemize}
+
+Additionally, to manipulate the native scheduler around CU points, we inject calls to \texttt{goat.handler()} before each statically discovered CU. \texttt{goat.handler()} is a function invocation from the \goat engine that randomly calls \texttt{runtime.GoSched()} (within a bound) to preempt the processing core from current goroutine and push the goroutine to the back of the global queue.
+%
+Tuning D enables flexibility in experimenting.
+
+\subsection{Offline Analysis}
 We take advantage of the rich collection of information about the dynamic behavior of within ECT to automatically identify whether one or more goroutines have been leaked after program termination.
 %
 Upon program termination, we construct a goroutine tree (figure \ref{fig:gtree}) of application goroutines by replaying through the execution ECT.
 %
 In the goroutine tree, parents are the goroutines that children are created from within them. Each node of the tree contains information about the goroutine creation site, the resources that it holds at each execution point and the final executed event right before program termination.
-%
+
+\subsubsection{Deadlock Detection}
+\label{sec:dld}
 In the lifetime of a program, the runtime system creates new goroutines or pick from the pool of dead goroutines to perform various tasks such as bootstrapping the program, garbage marking and sweeping, and tracing.
 %
 \goat also adds extra goroutine to \textit{watch} the main goroutine in case of blockage of the main goroutine.
@@ -83,6 +256,28 @@ If either of above conditions does not satisfy after program execution, a \textb
 
 
 
+\subsubsection{Coverage Measurement}
+Through a replay (\ie parsing the sequence) of ECT, a mapping between dynamic concurrent events and statically obtained CU points is emited by matching their respective call-stack and CU source location.
+%
+Through a BFS traversal of the goroutine tree, we add a \textit{coverage vector} to each goroutine node from the emitted mapping. Each element of the coverage vector is the respective covered value of requirement $R_i$ for the current goroutine node.
+%
+During executions of tests $t \in \mathcal{T}$, we maintain and update a global goroutine tree after each $t$.
+%
+It is crucial to maintain a global goroutine tree to measure the progress of coverage percentage over tests in $\mathcal{T}$.
+%
+Two goroutines $G_m$ and $G_n$ in the tests $t_i$ and $t_j$ are \textit{equivalent} (\ie falls into identical node in the global goroutine tree) if their parents are equivalent and their creation source location (CU of kind \texttt{go}) are identical:
+\begin{equation}
+  G_m \equiv G_n   \text{if}
+  \begin{cases}
+    \text{parent}(G_m) \equiv \text{parent}(G_n)  \wedge \\
+    \text{CU(}G_m\text{).file} = \text{CU(}G_n\text{).file}  \wedge\\
+    \text{CU(}G_m\text{).line} = \text{CU(}G_n\text{).line} \\
+  \end{cases}
+\end{equation}
+
+
+
+
 \begin{table*}[]
 \caption{Output of each debugging tool after experimenting on bug for GoKer \cite{yuan-gobench-cgo21} blocking bugs. For each tool, here is how to interprete its output: Detected bug (minimum \# of executions required) -- \textbf{X (1000)} means that the tool is not able to detect any bug after 1000 executions. \textbf{PDL}: Partial Deadlock, \textbf{GDL}: Global Deadlock, \textbf{PDL-k}: Partial Deadlock with \textit{k} number of goroutines leaked. \textbf{DL}: A warning for potential deadlock is issued. \textbf{TO/GDL}: The global deadlock is detected because none of goroutines made any progress after 20 seconds, \textbf{CRASH}: The execution paniced because of a flaw in the execution (e.g., send on closed channels panic), \textbf{HANG}: The tool halt for more than 10 minutes.}
 \centering
@@ -125,16 +320,6 @@ CU points are passed to the instrumentation phase of \goat to inject scheduler p
 
 \subsection{Instrumentation}
 \label{sec:dl_instrument}
-
-To equip the target application with concurrency tracing mechanism, we automatically inject three lines of code to the beginning of main or test function using AST package \cite{go-package-ast}:
-
-\begin{itemize}
-  \item \texttt{goat\_done := goat.Start()} initilizes \goat, enables tracing, and returns a channel as conduit between application space and \goat API.
-  \item \texttt{go goat.Watch(goat\_done)} spawns a new goroutine as a watcher for liveness of the program (in case of global deadlocks or infinite loop). The watcher goroutine either receives from \texttt{goat\_done} and sends back an ack signal, or timeouts and stop tracing, and terminates.
-  \item \texttt{defer goat.Stop(goat\_done)} sends a value to the watcher goroutine after main returns and signals that the program is finished. Then it waits to receive the signal from watcher, then stops tracing and terminates.
-\end{itemize}
-
-Additionally, to manipulate the native scheduler around CU points, we inject calls to \texttt{goat.handler()} before each statically discovered CU. \texttt{goat.handler()} randomly calls \texttt{runtime.GoSched()} to preempt the processing core from current goroutine and push the goroutine to the back of the global queue.
 
 
 

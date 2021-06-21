@@ -8,7 +8,7 @@ development of concurrency debugging methods.
 However, unless these debugging systems themselves are
 simple and widely applicable, the maintenance of multiple debugging and testing approaches will also prove to be a burden.
 %
-Driven by these observations, in this paper, we take a feature-rich language, namely Go~\cite{go}, research how to develop a practical analysis (\ie~testing and debugging) method for real-world Go programs, and present the resulting new tool called \goat.
+Driven by these observations, in this paper, we take a feature-rich language, namely Go~\cite{go}, research how to develop a practical analysis (\ie,~testing and debugging) method for real-world Go programs, and present the resulting new tool called \goat.
 %
 The main contribution of this work is to demonstrate how
 \goat's static and dynamic analysis methods---while very well known
@@ -23,7 +23,7 @@ It employs channel-based Hoare's Communicating Sequential Processes (CSP)~\cite{
 Go enjoys accelerating acceptance in a wide variety of
 communities including container software systems~\cite{merkel2014docker,kubernetes},  distributed key-value databases~\cite{etcd,cockroachdb-sigmod20}, and web server libraries \cite{grpc}.
 %
-It involves shared memory, message passing, non-deterministic message reception and selection, dynamic process creation, and programming styles that tend to create thousands of \textit{goroutines}~(\ie~application-level threads) and discard them to be garbage collected when not needed.
+It involves shared memory, message passing, non-deterministic message reception and selection, dynamic process creation, and programming styles that tend to create thousands of \textit{goroutines}~(\ie,~application-level threads) and discard them to be garbage collected when not needed.
 %
 The combination of these features is well known for Go's popularity, yet they also make Go challenging to debug.
 %
@@ -49,33 +49,46 @@ Concurrent testing methods~\cite{arora-concrrentTesting-16} are proposed to comp
 %
 To the best of our knowledge, there exist no such testing methods applicable to Go semantics.
 %
+
+\begin{figure*}[]
+\centering
+\includegraphics[width=0.99\linewidth]{figs/GOAT_overview.pdf}
+%\includegraphics[]{figs/overview.png}
+%\includegraphics[]{figs/overv}
+\caption{\goat Wrokflow}
+\label{fig:goat_workflow}
+\end{figure*}
+
+
 We implemented \goat, an analysis and testing framework for concurrent Go applications to address this lack.
 %
-\goat combines static and dynamic approaches to automatically analyze the behavior of concurrent components and facilitate testing and debugging Go applications.
+\goat (figure \ref{fig:goat_workflow}) combines static and dynamic approaches to automatically analyze the behavior of concurrent components and facilitate testing and debugging Go applications.
 %
-Several classic ideas from literature are combined with novel ones to support modern concepts of Go in /goat, which pursues three primary objectives:
+Several classic ideas from literature are combined with novel ones to support modern concepts of Go in \goat, which pursues three primary objectives:
 \\
 \noindent{\bf Objective 1:\/} \textit{Accurate Dynamic Execution Modeling}---
-To study the behavior of concurrent components and track the program's state during executions, a dynamic execution model has to construct to get compared against a pre-defined model (\eg formally defined specification or developer's mental model of the program).
+To study the behavior of concurrent components and track the program's state during execution, a dynamic execution model has to construct to get compared against a pre-defined model (\eg, formally defined specification or developer's mental model of the program).
 %
 It is crucial for debuggers and software analysis tools to construct their execution models as close as possible to the actual program execution context.
 %
-Since a bug might occur at various levels of abstraction, \textit{dynamic tracing} provides a practical and uniform way to track multiple facets of the program during execution (as we have shown in our priorwork~\cite{difftrace}).
+Since a bug might occur at various levels of abstraction, \textit{whole-program dynamic tracing} provides a practical and uniform way to track multiple facets of the program during execution~\cite{difftrace}.
 %
-We have enhanced the built-in tracing mechanism of Go~\cite{ect-arxiv} to capture the dynamic behavior of concurrency primitives in the form of a sequence of events (execution concurrency trace---ECT).
+We have enhanced the built-in tracing mechanism of Go~\cite{ect-arxiv} to capture the dynamic behavior of concurrency primitives in the form of a \textit{sequence of events}, namely \textit{execution concurrency trace} or ECT.
 %
-Each event in ECT represents an action that corresponds to exactly one statement in the source code.
+Each event in ECT represents an \textit{action} that corresponds to exactly one statement in the source code.
 %
-The ECT provides an accurate model of how a program behaves dynamically and assists debugging procedures (\eg bug detection, root-cause analysis, execution visualization).
+The ECT provides an accurate model of how a program behaves dynamically and assists debugging procedures (\eg, bug detection, root-cause analysis, execution visualization).
 %
 Our experiments show that \goat detects all blocking bugs of GoKer~\cite{yuan-gobench-cgo21} many of which are overlooked or unnoticed by existing debugging tools by replaying the program's ECT.
 \\
 \noindent{\bf Objective 2:\/} \textit{Systematic Exploration of Schedule-Space}---
-Since the scheduler's non-deterministic behavior is the primary reason for Heisenbugs (\ie errors that are uncommon to occur and hard to reproduce), these bugs may not manifest during conventional testing.
+Since the scheduler's non-deterministic behavior is the primary reason for Heisenbugs (\ie, errors that are uncommon to occur and hard to reproduce), these bugs may not manifest during conventional testing.
 %
 By adopting ideas from \textit{systematic concurrency testing} approaches~\cite{dpor,thomson-concurrencyTesting-ppopp14,emmi-delayBounded-popl11,burckhardt-depthBug-asplos10,madanlal-preemptionBound-pldi07,yu-maple-oopsla12,joshi-calfuzzer,contest-jgi01,edelstein2003contest,hong-syncTesting-issta12,christakis-erlang-icst13,yuan-morpheus-asplos20}, we perturb the native scheduler of Go to explore the unconventional but feasible execution interleaving.
 %
-First, we statically identify the source location of concurrency primitive usages in a given program as their behavior defines the program's dynamic behavior.
+First, we statically identify the source location of concurrency primitive usages in a given program.
+%
+% as their behavior defines the program's dynamic behavior.
 %
 Then we inject \goat handlers around these locations to manage schedule perturbation.
 %
@@ -86,7 +99,7 @@ Such yields change the blocking behavior of the program within the space of feas
 Our experiments show that it is effective in accelerating the exposure of rare bugs.
 
 \noindent{\bf Objective 3:\/} \textit{Testing Quality Measurement}---
-The effectiveness of software testing is often assessed by measuring coverage of some aspects of the software, such as its source-code statements (\eg higher statement coverage of a test suite shows its higher thoroughness).
+The effectiveness of software testing is often assessed by measuring coverage of some aspects of the software, such as its source-code statements (\eg, higher statement coverage of a test suite shows its higher thoroughness).
 %
 In the context of conrruent software, exisiting coverage metrics~\cite{edelstein2003contest,trainin-followsCoverage-padtad09,hong-syncTesting-issta12,yu-pset-isca09} characterize (quantify) the behavior of concurrency primitives which enables the quality measurement of schedule-space exploration.
 %
