@@ -98,7 +98,7 @@ The observed causes of such blocking flaws in the context of Go are as follows:
 \stcmtside{about race}
 Go inherited traditional non-blocking bugs such as data races and atomicity violations from older concurrent languages while introducing new bug idioms due to its new concepts such as anonymous functions \cite{tu-concurrentBugs-asplos19}.
 %
-In this work, our focus is on blocking bugs.
+In this work, our focus is on blocking bugs (\ie, partial and global deadlocks).
 
 %
 \stcmt{below: Application-level non-determinism makes debugging more difficult}
@@ -107,13 +107,13 @@ In addition to the non-deterministic nature of concurrent languages caused by th
 %
 The \textit{select-case} statement (similar to switch-case) allows the goroutine to wait on multiple channel operations.
 %
-Go runtime picks one case pseudo-randomly among available cases of selects (\ie channel sends and receives that are ready to execute without blocking).
+The runtime picks one case pseudo-randomly among available cases (\ie channel sends and receives that are ready to execute without blocking).
 %
 If none of the cases are ready, the executing goroutine is blocked unless there is a \textit{default} case.
 %
 The default case makes the select non-blocking and prevents the goroutine from waiting for unavailable communications.
 %
-Such random behavior expands the interleaving space, especially when select statements are used in nested fashion within nested loops.
+Such random behavior expands the interleaving space and it grows exponentially when select statements are used in nested fashion within nested loops.
 %
 Hence, root-causing the misbehaved execution of a buggy program becomes more challenging.
 %
@@ -121,18 +121,27 @@ Our experiments/observations (section or table \ref{} **FIXME**) demonstrate tha
 
 
 \subsection{Accelerating Bug Exposure}
-As we have shown in figure \ref{fig:rare_bugs}, there are cases that the bug is hidden within  the interleaving space.
+Assuming the non-deterministic decisions that the scheduler makes is the main cause of blocking bugs, deadlocks may not manifest during conventional testing and are difficult to reproduce.
 %
-It is proved that context-switches before synchronization/serialization operations in concurrent programs increases the probability of finding rare concurrent bugs \cite{burckhardt-depthBug-asplos10}.
+Even for simplified bug kernels, more than 30\% of bugs takes more than one execution to occur (figure \ref{fig:rare_bugs}).
 %
-For example, a rare context-switch right after the select statement in line \ref{bugListing:Monitor_select} causes the lock operation on mutex $m$ in line \ref{bugListing:Monitor_case_def_lock} of goroutine \texttt{Monitor} to \textit{block} goroutine \texttt{StatusChange} on locking $m$ in line \ref{bugListing:statChange_lock} and causing a deadlock.
+A common approach for exercising the scheduler is \textit{stress testing} in which the program is executed many times with the hope for the bug to manifest.
+%
+However, such testing is exponentially expensive and some interleavings might get tested repeatedly while other feasible interleavings remain untested.
+%
+It is proved that a small level of randomness for each test execution can drastically reduce the number of testing iterations until the bug is exposed \cite{emmi-delayBounded-popl11}.
+%
+For instance, random context-switches before synchronization/serialization operations in concurrent programs increases the probability of finding rare concurrent bugs \cite{burckhardt-depthBug-asplos10}.
+%
+In listing \ref{listing:moby28462.minipage}, a rare context-switch right after the \texttt{select} statement in line \ref{bugListing:Monitor_select} causes the lock operation on mutex $m$ in line \ref{bugListing:Monitor_case_def_lock} of goroutine \texttt{Monitor} to \textit{block} goroutine \texttt{StatusChange} on locking $m$ in line \ref{bugListing:statChange_lock} and causing a deadlock.
 %
 Concurrency primitive usages are the \textit{critical points} in the program because their behavior directly impacts the blocking behavior of Go programs.
 %
-In \goat, we statically identify such critical points and inject random and bounded number of delays before
-each concurrency primitive usage.
+In \goat, we statically identify such critical points and inject delay handlers before each concurrency primitive usage.
 %
-
+During execution, the handlers randomly decide if the current goroutine should \textit{yield} to other goroutines to execute.
+%
+Results in section \ref{sec:evaluation} show that such simple delays are effective in detecting rare bugs.
 
 \subsection{Testing Coverage Analysis}
 \label{sec:coverage}

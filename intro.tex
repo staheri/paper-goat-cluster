@@ -1,21 +1,3 @@
-The use of increasing levels of parallelism and concurrency in HPC and Cloud is a double-edged sword: while it helps increase performance, save energy, and enhance user experience, it
-unfortunately comes with the cost of concurrency bugs.
-%
-This trend can worsen with the upcoming HPC/Cloud
-integration~\cite{dan-herbein-dong} unless we accelerate the
-development of concurrency debugging methods.
-%
-However, unless these debugging systems themselves are
-simple and widely applicable, the maintenance of multiple debugging and testing approaches will also prove to be a burden.
-%
-Driven by these observations, in this paper, we take a feature-rich language, namely Go~\cite{go}, research how to develop a practical analysis (\ie,~testing and debugging) method for real-world Go programs, and present the resulting new tool called \goat.
-%
-The main contribution of this work is to demonstrate how
-\goat's static and dynamic analysis methods---while very well known
-by their names and effectiveness in simpler contexts---can
-be brought to bear on realistic bug scenarios in the setting of
-a complex language such as Go.
-
 Go~\cite{go} is a statically typed language initially developed by Google.
 %
 It employs channel-based Hoare's Communicating Sequential Processes (CSP)~\cite{hoare-csp78} semantics in its core and provides a productivity-enhancing environment for concurrent programming.
@@ -43,7 +25,7 @@ On the other hand, dynamic analysis approaches cover a more significant subset o
 %
 However, for large codebases with thousands of LOC, it is non-trivial to capture an accurate dynamic execution model using source instrumentation or source-to-source translation.
 %
-In addition, our experiments (section \ref{sec:f} **FIXME**) and results in~\cite{yuan-gobench-cgo21} show that some buggy programs takes up to more than 1000 runs to manifest the bug.
+Furthermore, our experiments (section /ref{sec} **FIXME**) and results in /cite[yuan-gobench-cgo21] demonstrate that some buggy programs take more than 1,000 runs to give rise to the bug.
 %
 Concurrent testing methods~\cite{arora-concrrentTesting-16} are proposed to complement static and dynamic approaches in tackling challenges of concurrent debugging.
 %
@@ -60,9 +42,9 @@ To the best of our knowledge, there exist no such testing methods applicable to 
 \end{figure*}
 
 
-We implemented \goat, an analysis and testing framework for concurrent Go applications to address this lack.
+We implemented \goat (\textbf{Go} \textbf{A}nalysis and \textbf{T}esting), a debugging framework for concurrent Go applications to address this lack.
 %
-\goat (figure \ref{fig:goat_workflow}) combines static and dynamic approaches to automatically analyze the behavior of concurrent components and facilitate testing and debugging Go applications.
+\goat (figure \ref{fig:goat_workflow}) combines static and dynamic approaches to automatically analyze the behavior of concurrent components and facilitate the process of testing and debugging Go applications.
 %
 Several classic ideas from literature are combined with novel ones to support modern concepts of Go in \goat, which pursues three primary objectives:
 \\
@@ -77,9 +59,9 @@ We have enhanced the built-in tracing mechanism of Go~\cite{ect-arxiv} to captur
 %
 Each event in ECT represents an \textit{action} that corresponds to exactly one statement in the source code.
 %
-The ECT provides an accurate model of how a program behaves dynamically and assists debugging procedures (\eg, bug detection, root-cause analysis, execution visualization).
+An ECT provides a detailed model of how a program behaves dynamically and assists debugging procedures (e.g., bug detection, root-cause analysis, execution visualization).
 %
-Our experiments show that \goat detects all blocking bugs of GoKer~\cite{yuan-gobench-cgo21} many of which are overlooked or unnoticed by existing debugging tools by replaying the program's ECT.
+Our experiments show that by replaying the program's ECT, \goat detects all blocking bugs of GoKer~\cite{yuan-gobench-cgo21} many of which are overlooked or undetected by existing debugging tools.
 \\
 \noindent{\bf Objective 2:\/} \textit{Systematic Exploration of Schedule-Space}---
 Since the scheduler's non-deterministic behavior is the primary reason for Heisenbugs (\ie, errors that are uncommon to occur and hard to reproduce), these bugs may not manifest during conventional testing.
@@ -88,28 +70,26 @@ By adopting ideas from \textit{systematic concurrency testing} approaches~\cite{
 %
 First, we statically identify the source location of concurrency primitive usages in a given program.
 %
-% as their behavior defines the program's dynamic behavior.
-%
-Then we inject \goat handlers around these locations to manage schedule perturbation.
+/goat handlers are then injected around these locations to manage schedule perturbation.
 %
 At its simplest form, handlers randomly decide if the current goroutine should continue executing or \textit{yield} to other goroutines to execute first.
 %
 Such yields change the blocking behavior of the program within the space of feasible states and exercise untested interleavings, consequently heighten the propensity for bug introduction.
 %
-Our experiments show that it is effective in accelerating the exposure of rare bugs.
+The results of our experiments indicate that just a few random schedule perturbations can accelerate the exposure of rare bugs.
 
 \noindent{\bf Objective 3:\/} \textit{Testing Quality Measurement}---
-The effectiveness of software testing is often assessed by measuring coverage of some aspects of the software, such as its source-code statements (\eg, higher statement coverage of a test suite shows its higher thoroughness).
+A test suite's thoroughness is often judged by the coverage of certain aspects of the software, such as its source-code statements (a higher statement coverage indicates more thorough testing).
 %
 In the context of conrruent software, exisiting coverage metrics~\cite{edelstein2003contest,trainin-followsCoverage-padtad09,hong-syncTesting-issta12,yu-pset-isca09} characterize (quantify) the behavior of concurrency primitives which enables the quality measurement of schedule-space exploration.
 %
-The characterization process consists of defining a set of requirements that must be met during testing and a method for measuring whether those requirements are met.
+Such characterizations involve defining an initial set of requirements and a method for assessing whether or not those requirements are met during testing.
 %
 Since Go combines traditional synchronization and serialization primitives~(mutex, conditional variables) with message-passing and introduces new concepts such as \textit{select-case}~(non-deterministic communication and synchronization), new coverage requirements are required to characterize the behavior of Go concurrency.
 %
-Using the \goat's infrastructure, we deep studied the underlying causes of bugs in GoKer benchmark~\cite{yuan-gobench-cgo21} and proposed a set of coverage requirements that 1) coherently characterize the dynamic behavior of concurrency primitives under various scheduling scenarios, and 2) enable measurement of schedule-space exploration until reaching a threshold, or the bug is exposed.
+Using the \goat's infrastructure, we deep studied the underlying causes of bugs in GoKer benchmark~\cite{yuan-gobench-cgo21} and proposed a set of coverage requirements that 1) coherently characterize the dynamic behavior of concurrency primitives under various scheduling scenarios and 2) enable measurement of schedule-space exploration until reaching a threshold, or exposing the bug.
 %
-We identify if coverage requirements are covered during testing by analyzing the test's ECT.
+By analyzing the test's ECT, we can identify if coverage requirements are met during testing.
 %
 We demonstrate that our novel coverage metric is effective in measuring the schedule-space exploration progress.
 
