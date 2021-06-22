@@ -16,7 +16,7 @@ The instrumented \textbf{P} is then built and executed in the \goat runtime that
 %
 Once the execution of \textbf{P} terminates (\eg, successfully exits , fails, times out), an ECT (execution concurrency trace) containing sequence of executed events is generated to get analyzed in offline (section \ref{sec:offline_analysis}).
 %
-If we detect a bug or the coverage reaches a threshold, \goat terminates the process and generates reports for the user (section \ref{sec:reports}). Otherwise, \goat continues the testing iteration until the termination condition met.
+If we detect a bug or the coverage reaches a threshold, \goat terminates the process and generates reports for the user (samples of reports and visualuzitations are available [online or appendix]). Otherwise, \goat continues the testing iteration until the termination condition met.
 %
 The remainder of this section describe the design and implementation of each component of \goat.
 
@@ -259,9 +259,6 @@ Two goroutines $G_m$ and $G_n$ in the tests $t_i$ and $t_j$ are \textit{equivale
 
 
 
-
-\subsection{Instrumentation}
-\label{sec:dl_instrument}
 
 
 
