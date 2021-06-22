@@ -22,18 +22,23 @@ The remainder of this section describe the design and implementation of each com
 
 \subsection{Static Analysis}
 \label{sec:static_analysis}
-The concurrent behavior of P is defined by the behavior of P's concurrency primitives. 
+To gain insight into the behavior of P, \goat statically constructs a model from the usage of concurrency primitives and enables uniform analysis and update during testing iterations.
 %
-Thus, \goat identifies the source locations (file and line number) of \textit{concurrency primitive usages} to construct a fixed model for two main purposes
-\goat obtains the \textit{abstract syntax tree} (AST) for each of source files in \textbf{P} using the Go AST package~\cite{go-package-ast}.
+The model is a table of source locations (files and line numbers) that correspond to concurrency primitive actions (\eg, channel send or mutex unlock).
 %
-By traversing the ASTs of \textbf{P}, \goat identifies the source locations (file and line number) of \textit{concurrency usages} to construct a fixed model for two measuring coverage.
+Such actions define the concurrent behavior (\ie, non-determinitstic blocking interaction between concurrent components) of P.
 %
-In addition, the identified locations are the candidates for delay injection.
+\goat inject random and bounded delays at these source locations to explore feasible scenarios and accelerate the exposure of rare bugs.
+%
+In section \ref{sec:covreq}, we describe the other advantage of concurrency usage model in defining concurrent coverage requirements and their dynamic measurements.
+%
+
+By traversing the \textit{abstract syntax tree} (AST) for each of source files in \textbf{P} using the Go AST package~\cite{go-package-ast}, \goat constructs the concurrency usage \textit{concurrency usages} (CU) model.
 %
 We also identify the main function during AST traversal to equip \textbf{P} with concurrency tracing mechanism.
 
-\subsubsection{Identify Concurrency Usage}
+\subsubsection{Concurrency Usage Identification}
+
 We define \textit{concurrency usage} (CU) as a triple of $(f,l,k)$ where $f$ is the file name, $l$ is the line number and $k$ is the kind of concurrency primitive used in the code location.
 Kind $k\in$ \texttt{Channel} $\cup$ \texttt{Sync} $\cup$ \texttt{Go} where:
 \begin{itemize}
@@ -46,49 +51,10 @@ The first column of table \ref{tab:moby_cov_table} shows the critical points ext
 %
 \goat injects its handlers before CU points are the entry points to inject delay handlers of \goat to inject scheduler perturbation handlers before these points.
 
-\subsection{Coverage}
-\label{sec:coverage}
-To demonstrate that testing has been thorough, \textit{coverage metrics} are defined to measure the progress of tests and specify testing termination condition.
-%
-Coverage metric for the set of testing executions $\mathcal{T}$ is a set of \textit{requirements} $\mathcal{R}$ that should get covered during testing iterations.
-%
-We say requirement $R_i$ is covered during testing iteration $t \in \mathcal{T}$ if we can correlate an \textit{action} during execution of $t$ to $R_i$.
-%
-For example, in \textit{statement coverage}, which is a widely-used metric in testing sequential software, $R$ is the set of source locations (file and line numbers) in the target program
-%
-$R_i$ is covered by test execution $t$ if the statement at location $R_i$ is executed in $t$.
-%
-The \textit{coverage percentage} of a test $\mathcal{T}$ is the ratio of the requirements covered by at least one execution over the number of all requirements ($|R|$).
-
-As explained in section \ref{sec:bg}, concurrent software testing frameworks perform testing iterations to explore the schedule-space and expose flaws.
-%
-Depending on the class of target bug, different coverage metrics are proposed and used for concurrent software testing.
-%
-\textit{Synchronization} coverage metrics such as \textit{blocking-blocked} \cite{edelstein2003contest}, \textit{blocked-pair-follows} \cite{trainin-followsCoverage-padtad09} and \textit{synchronization-pair} \cite{hong-syncTesting-issta12} defined requirements to cover during testing for exposing blocking bugs (\eg deadlocks).
-%
-%\textit{Memory access} coverage metrics such as PSet \cite{yu-pser-isca09} and def-use \cite{yang-defuse-issta98} focuses on data-access related bugs such as atomicity violation or data races.
-%
-For example, the synchronization coverage model in \cite{edelstein2003contest} defines \textit{blocking} and \textit{blocked} requirements per each synchronized block (\ie mutually exclusive section of the code that is protected by a lock).
-%
-The purpose of this requirement is to check if a test can report when there is a lock contention for two or more threads entering the synchronized block.
-%
-That is, a thread is either \textit{blocked} from entering the synchronization block or \textit{blocking} other threads from entering by holding the lock.
 %
 
-\subsubsection{Coverage Requirements}
-\label{sec:coverage_requirements}
-Proposed concurrency coverage metrics are mostly in the context of Java and C/Pthreads and are not directly applicable to languages like Go as Go has different concurrncy primitives and semantics.
-%
-Bron et. al,\cite{bron-appSyncCov-ppopp05} enumerates four major characteristics for coverage metrics to gain acceptance:
-\begin{itemize}
-  \item \textbf{Fixed model:} The metric should be well-understood by the developer or tester. A static model of requirements from target program should be constructed by instrumenting the source-code. The model should maintain covered requirements during testing executions.
-  \item \textbf{Coverable and measurable requirements:} The absolute majority of reqiurements should be realistic enough to be \textit{coverable} during testing. For a few that are not coverable (due to program semantics) or not \textit{measurable} (because of technical limitations), the devloper should be aware of the reason.
-  \item \textbf{Actions for uncovered requirements:} After testing terminates, every uncovered requirement should yield an action (\eg extending testing iterations or removing dead code from the program thus removing uncoverable requirements)
-  \item \textbf{Coverage satisfaction:} Some action should be taken upon reaching a threshold of coverage percentage (e.g., testing phase termination when reaching 100\% statement coverage)
-\end{itemize}
-
-Defining a new coverage metric to satisfy above characteristics requires an accurate and proper mental model of target bugs.
-%
+\subsection{Coverage Requirements}
+\label{sec:covreq}
 Based on our observations from execution of Go applications and bug kernels on the behavior of concurrency primitives, we define a set of coverage requirements (summarized in table \ref{tab:cov_req}):
 %
 \begin{itemize}
@@ -177,9 +143,13 @@ Tuning D enables flexibility in experimenting.
 \subsection{Offline Analysis}
 We take advantage of the rich collection of information about the dynamic behavior of within ECT to automatically identify whether one or more goroutines have been leaked after program termination.
 %
-Upon program termination, we construct a goroutine tree (figure \ref{fig:gtree}) of application goroutines by replaying through the execution ECT.
+ECT also contains evidence about whether the coverage requirements has been covered during exeuction.
 %
-In the goroutine tree, parents are the goroutines that children are created from within them. Each node of the tree contains information about the goroutine creation site, the resources that it holds at each execution point and the final executed event right before program termination.
+Upon program termination, we construct a goroutine tree (figure \ref{fig:gtree}) of application goroutines by replaying executed ECT.
+%
+In the goroutine tree, parents are the goroutines that children are created from within them.
+%
+Each node of the tree contains information about the goroutine creation site, the resources that it holds at each execution point and the final executed event right before program termination.
 
 \subsubsection{Deadlock Detection}
 \label{sec:dld}
@@ -187,9 +157,9 @@ In the lifetime of a program, the runtime system creates new goroutines or pick 
 %
 \goat also adds extra goroutine to \textit{watch} the main goroutine in case of blockage of the main goroutine.
 %
-These extra goroutines are captured in the tracing but we are not interested in studying them as our main focus is the main application (or test) and all application-level goroutines.
+These extra goroutines are captured in the tracing but we are not interested in studying them as our main focus is the main application and all application-level goroutines.
 %
-By checking the stack of creation location, \goat prune the goroutine and only keep the \textit{application-level} goroutines.
+By checking the stack of creation location, \goat prunes the goroutine tree and only keeps the \textit{application-level} goroutines.
 %
 We say a goroutine is an application-level goroutine if it is the main goroutine (that executes the main function) or it has all of the following conditions:
 1) its ancestor is the main goroutine,
@@ -221,7 +191,7 @@ We call an execution \textbf{successful}, if below conditions hold
   \item (1) all goroutines spawned in the main goroutine has $GoEnd$ as their final event
   \item (2) the final event of the main goroutine is $GoSched$ with \texttt{runtime.traceStop} on top of its stack.
 \end{enumerate}
-If either of above conditions does not satisfy after program execution, a \textbf{deadlock} happens because it shows that there are one or more goroutine that did not reach its final state. \goat executes procedure \ref{proc:deadlockCheck} which is a BFS traversal on the goroutine tree to check if the program suffers from deadlocks.
+If either of above conditions does not satisfy after program execution, a \textbf{deadlock} happens because it shows that there are one or more goroutines that did not reach its final state. \goat executes procedure \ref{proc:deadlockCheck} which is a BFS traversal on the goroutine tree to check if the program suffers from deadlocks.
 
 \begin{small}
 \begin{algorithm}[]
@@ -289,34 +259,6 @@ Two goroutines $G_m$ and $G_n$ in the tests $t_i$ and $t_j$ are \textit{equivale
 
 
 
-\subsection{Accelerating Bug Exposure}
-\label{sec:critical}
-As we have shown in figure \ref{fig:rare_bugs}, there are cases that the deadlock is hidden in the interleaving space.
-%
-It is proved that context-switches before synchronization/serialization operations in concurrent programs increases the probability of finding rare concurrent bugs \cite{burckhardt-depthBug-asplos10}.
-%
-For example, a rare context-switch right after the select statement in line \ref{bugListing:Monitor_select} causes the lock operation on mutex $m$ in line \ref{bugListing:Monitor_case_def_lock} of goroutine \texttt{Monitor} to \textit{block} goroutine \texttt{StatusChange} on locking $m$ in line \ref{bugListing:statChange_lock} and causing a deadlock.
-%
-Concurrency primitive usages are the \textit{critical points} in the program because their behavior directly impacts the blocking behavior of Go programs.
-%
-In \goat, we identify the usage of concurrency primitives as the critical points of the program before which a context-switch increases the probablity of manifesting a hidden bug that might not occur during conventional or stress testing.
-%These critical points are interesting to study application correctness because 1)their behavior depends on the state of other goroutines at each execution step, 2) investigating their behavior and interaction with other goroutines is the key to debug the program behavior, 2) a contex-switch before their execution might change the operation behavior, and consequently the whole program behavior.
-%
-%
-We define \textit{concurrency usage} (CU) as a triple of $<f,l,k>$ where $f$ is the file name, $l$ is the line number and $k$ is the kind of concurrency primitive used in the code location.
-Kind $k\in$ \texttt{Channel} $\cup$ \texttt{Sync} $\cup$ \texttt{Go}:
-\begin{itemize}
-  \item \texttt{Channel} = \{\texttt{send}, \texttt{receive}, \texttt{close}\}
-  \item \texttt{Sync} = \{\texttt{lock}, \texttt{unlock}, \texttt{wait}, \texttt{add}, \texttt{done}, \texttt{signal}, \texttt{broadcast}\}
-  \item \texttt{Go} = \{\texttt{go}, \texttt{select}, \texttt{range}\}
-\end{itemize}
-
-The first column of table \ref{tab:moby_cov_table} shows the critical points extracted from program in listing \ref{listing:moby28462.minipage}.
-%
-We identify CU points by parsing the abstract syntax tree (AST) of the target source using Go AST package \cite{go-package-ast}.
-%
-CU points are passed to the instrumentation phase of \goat to inject scheduler perturbation handlers before these points.
-
 
 \subsection{Instrumentation}
 \label{sec:dl_instrument}
@@ -331,48 +273,3 @@ CU points are passed to the instrumentation phase of \goat to inject scheduler p
 }
 \label{tab:moby_cov_table}
 \end{table}
-
-
-\subsection{Evaluation}
-\label{sec:dl_evaluation}
-In this section, we assess the ability of \goat and its variations in detecting bugs with minimum number of executions required to expose the bug.
-%
-We have compared \goat against three existing dynamic detectors:
-\begin{itemize}
-  \item \textit{Built-in} Deadlock Detector: It is an embeded mechanism in the standard Go runtime. The mechanism periodically makes sure that the queue of \textit{runnable} goroutines is never empty until the main goroutine terminates. If the queue is empty and main has not terminated yet (\ie main is blocked), it throws a runtime error.
-  \item \textit{goleak} \cite{goleak}: This leak detector from Uber checks the program stack at the end of the main goroutine to find the application-level goroutines that remained in the stack (\ie leaked).
-  \item \textit{LockDL} \cite{lockdl}: This tool intercept with all mutex locks and unlocks of the target application to maintain a ``lock-set'' data structure. \textit{LockDL} issues warning during runtime when it finds a circular wait in the lock-set or double-locking the same lock. It has a timeout mechanism for application that traps into global deadlocks (30 seconds by default).
-\end{itemize}
-
-All experiments are performed on a server with two AMD Ryzen 5 3600 6-Core Processor (12 total cores with 2 threads per core and 6 cores per socket), 64 GB of RAM with generic Ubuntu 4.15.0 and Go version 1.15.6.
-%
-Table \ref{tab:comparison} shows the details of results obtained from executing each tool per bug 1000 times.
-%
-We show that the tool is unable to detect the bug after 1000 executions with \textbf{X (1000)}.
-%
-
-%
-Figure \ref{fig:detection} and table \ref{tab:comparison} show that variations of \goat outperforms other detector by discovering the bug in 100\% of the GoKer blocking benchmark.
-%
-Figure \ref{fig:runs} and highlighted cells of table \ref{tab:comparison} show that the idea of injecting random delays around concurrency usage points in the program drastically reduces the required number of testing iterations until the bug occur.
-%
-D0 means \goat did not delay the program at any point and D4 means that the target program has been delayed up to four times around its CU points.
-%
-Figures \ref{fig:detection} and \ref{fig:runs} also state that the increase in the delay bound of \goat does not necessarily increase the chance of exposing the bug.
-%
-For example, the row of bug \texttt{serving\_2137} in table \ref{tab:comparison} show that only \goat D2 were able to detect the bug.
-
-\begin{figure}
-\centering
-  \includegraphics[width=.95\linewidth]{figs/P4_detections.pdf}
-  \caption{Distribution of detected bugs by built-in deadlock detector (BUILTINDL), LockDL, GoLeak, and GOAT different D over 1000 runs. PDL: partial deadlock, GDL/TO: global deadlock, Crash/Halt: causes the program to crash or halt during detection, X: nothing is detected }
-  \label{fig:detection}
-\end{figure}
-
-
-\begin{figure}
-\centering
-  \includegraphics[width=.95\linewidth]{figs/P4_runs.pdf}
-  \caption{Distribution of required number of iterations to detect the bug for each tool}
-  \label{fig:runs}
-\end{figure}
