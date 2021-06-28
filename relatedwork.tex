@@ -1,79 +1,4 @@
-Go comes with a few dynamic tools for analysis and debugging its programs.
-%
-For example, the \textit{race detector} \cite{go-race-blog} which is basically a wrapper around ThreadSanitizer \cite{konstantin-tsan-wbia09}, tracks memory accesses and detect races that happened during execution.
-%
-A few other facilities for code coverage measurement, profiling, and tracing are provided to deliver insight into the testing quality and performance behavior.
-%
-However, there is still a considerable gap for debugging concurrency.
-%
-Several research groups have recently proposed and developed a range of \textit{static} (source-level) or \textit{dynamic} (execution-level) theories and tools towards filling this gap.
-%
-Ng and Yoshida \cite{ng-dl-cc16} first proposed a static tool to detect global deadlock in Go programs using choreography synthesis.
-%
-Later, Stadtmuller et al. \cite{stadtmuller-minigo-aplas16} proposed a static trace-based global detection approach based on forkable regular expressions.
-%
-Lange et al. proposed more static verification frameworks for checking channel safety, and liveness \cite{lange-fence-popl17}, and behavioral model checking \cite{lange-staticType-icse18}.
-%
-Both methods approximate Go programs with session types and behavioral contracts extracted from their SSA intermediate representation.
-%
-The mentioned work has limitations for handling dynamic (e.g., in-loop) goroutine or channel creation.
-%
-They also do not scale and are impractical in real-world programs due to the state explosion problem.
-%
-Besides, similar to other static analysis methods, they often suffer from false positives due to conservative constraints.
-
-%
-Zhao et al. \cite{zhao-occam97} introduced a runtime monitoring approach for deadlock detection for Occam based on wait-for graphs and some heuristics. Occam is a concurrent language based on CSP semantics, and similar to Go, it uses channels to establish communication between processes.
-%
-Sulzmann and Stadtmuller proposed a dynamic verification approach for synchronous (unbuffered) channels \cite{sulzmann-corr17}, and a vector-clock-based approach for asynchronous channels \cite{sulzmann-twophase-2018}.
-%
-Both approaches require heavy code instrumentation and replay of collected traces.
-%
-Although they may support a larger subset of the Go language, they only focus on channels as the root cause of deadlocks and evaluated only on relatively small examples.
-%
-Generally, dynamic analyzers are not \textit{sound} meaning that they are only able to catch occurred bugs and might miss potential unhappened bugs.
-
-%\cite{dilley-gomela-corr2020}
-%
-
-Systematic testing combines ideas from static and dynamic approaches to reduce the state space and reflect realistic behavior.
-%
-Assuming the scheduler causes concurrency bugs (and not the program input), they may not manifest during conventional testing and difficult to reproduce, both due to non-deterministic decisions that the scheduler makes.
-%
-Stress testing the scheduler to examine possible interleaving is useful to expose hidden bugs, but they are exponentially expensive relative to the number of concurrent units.
-%
-Researchers have applied different methods \cite{thomson-concurrencyTesting-ppopp14} to reduce the interleaving space to explore effectively and efficiently.
-%
-Delay-bounded \cite{emmi-delayBounded-popl11,burckhardt-depthBug-asplos10} and preemption-bounded \cite{madanlal-preemptionBound-pldi07} techniques systematically ``fuzz'' the scheduler to equally and fairly cover feasible interleaving.
-%
-Other tools like Maple \cite{yu-maple-oopsla12}, CalFuzzer \cite{joshi-calfuzzer},  and ConTest \cite{contest-jgi01,edelstein2003contest} \textit{actively} control the scheduler to maximise a pre-defined concurrency coverage criterion \cite{hong-syncTesting-issta12} or the probability of bug exposure \cite{burckhardt-depthBug-asplos10}.
-
-Adopting ideas from existing concurrency testing tools, we systematically navigate the scheduler towards executing likely-erroneous interleaving.
-%
-We first identify the usage of concurrency primitives (\textit{critical points}) in the program using a tracing mechanism.
-%
-We automatically inject random delays around the critical points to increase the probability of bug exposure (more in section \ref{sec:design}).
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-\subsection{Current Correctness Tooling}
-
+\subsection{Go Correctness}
 Decades of research effort have been dedicated to the logical and performance correctness of concurrent and parallel programs.
 %
 For CSP-based concurrent languages like Go, static (source-level) analysis methods \cite{ng-dl-cc16,lange-fence-popl17,lange-staticType-icse18} tend to assure bug freedom and verify safety properties through abstractions like session types and choreography synthesis.
@@ -109,56 +34,14 @@ Standard Go comes with a few dynamic analysis tools. For example, the \textit{ra
 A few other facilities for code coverage measurement, profiling, and tracing \cite{go-package-trace} are provided to deliver insight into the testing quality and performance behavior.
 %
 The built-in race detector \cite{go-race-blog}, despite its limitations (\eg supporting up to 8192 goroutines), has proved to be effective in dynamically detecting data races in most cases quickly.
-%
-In this work, our focus is on blocking bugs as they have received little attention.
 
-\stcmtside{motivates dynamic tracing}
-It is crucial for debuggers and software analysis tools to construct their abstract models as close as possible to the actual program execution context.
-%
-For multi-threaded Java, effective dynamic methods like ConTest \cite{contest-jgi01}, Goodlock \cite{havelund-goodlock-spin00} and CalFuzzer \cite{joshi-calfuzzer} maintain a model built from \textit{synchronization constructs} of the program, as the main ingredient of dynamic concurrency model.
-%
-Our investigations state that such comprehensive dynamic data collection mechanisms to abstract reliable concurrency models for Go applications do not exist.
-%
-Profilers \cite{go-profile-blog} give up some accuracy by approximating the dynamic behavior through aggregated samples from counters,
-%
-while distributed (decentralized) tracing systems \cite{dapper} gather logs and information (\eg HTTP request latency) through source instrumentation and an underlying network.
-%
-We explain the enhancement that we made to the original tracer package of Go to obtain accurate reflection of dynamic concurrent behavior of Go applications in section \ref{sec:design}
-%
-
-
-\subsection{Accelerating bug exposure}
-
-\stcmt{
-- background on testing, schedule-space exploration, accelrating bug Exposure
-}
-
-
-\stcmt{related work for testing and schedule-exploration}
+\subsection{Systematic Testing}
 Systematic testing combines ideas from static and dynamic approaches to reduce the state space and reflect realistic behavior.
 %
 Assuming the scheduler causes concurrency bugs (and not the program input), they may not manifest during conventional testing and difficult to reproduce, both due to non-deterministic decisions that the scheduler makes.
-%
-Stress testing the scheduler to examine possible interleaving is useful to expose hidden bugs, but they are exponentially expensive relative to the number of concurrent units.
 %
 Researchers have applied different methods \cite{thomson-concurrencyTesting-ppopp14} to reduce the interleaving space to explore effectively and efficiently.
 %
 Delay-bounded \cite{emmi-delayBounded-popl11,burckhardt-depthBug-asplos10} and preemption-bounded \cite{madanlal-preemptionBound-pldi07} techniques systematically ``fuzz'' the scheduler to equally and fairly cover feasible interleaving.
 %
 Other tools like Maple \cite{yu-maple-oopsla12}, CalFuzzer \cite{joshi-calfuzzer},  and ConTest \cite{contest-jgi01,edelstein2003contest} \textit{actively} control the scheduler to maximise a pre-defined concurrency coverage criterion \cite{hong-syncTesting-issta12} or the probability of bug exposure \cite{burckhardt-depthBug-asplos10}.
-
-Adopting ideas from existing concurrency testing tools, we systematically navigate the scheduler towards executing likely-erroneous interleaving.
-%
-We first identify the usage of concurrency primitives (\textit{critical points}) in the program using a tracing mechanism.
-%
-We automatically inject random delays around the critical points to increase the probability of bug exposure (more in section \ref{sec:design}).
-
-\stcmt{maybe one paragraph about coverage}
-\stcmt{intro to coverage}
-\begin{itemize}
-  \item We also have defined a coverage metric/model/criterion To measure the quality of tests that GOAT is able to perform.
-  %
-  \item Our experiments show that GOAT is effecive in detecting 100\% of blocking bugs in GoKer bench.
-  \item Our experiments also show that the coverage metrics that we designed have linear correlation with the rate of bug exposure (i.e., number of testing runs that it takes for the buggy interleaving to occur) for rare bugs.
-  \item While these ideas have been developed and proved to be effective in other contexts \cite{burckhardt-depthBug-asplos10,emmi-delayBounded-popl11,madanlal-preemptionBound-pldi07}, our contribution is to show these ideas in the context of a modern language with growing industry-side adoption.
-\end{itemize}

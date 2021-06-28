@@ -1,7 +1,4 @@
-We demonstrate the motivation behind \goat by describing the concurrency model of Go and the common causes and symptoms of concurrent bugs in Go.
-%
-In section
-%\input{tabs/moby28462}
+
 \input{tabs/moby28462_minipage}
 %\input{tabs/moby28462_minipage_codeOnly}
 
@@ -25,7 +22,7 @@ This rich mixture of features has, unfortunately, greatly exacerbated the comple
 %
 In fact, the popularity of Go has outpaced its debugging support~\cite{go-survey,tu-concurrentBugs-asplos19,yuan-gobench-cgo21}.
 %
-There are some encouraging developments in support of debugging, such as a data race checker \cite{go-race-blog} that has now become a standard feature of Go, and has helped catch many a bug.
+There are some encouraging developments in support of debugging, such as a data race checker \cite{go-race-blog} that has now become a standard feature of Go and has helped catch many a bug.
 %
 However, the support for blocking bugs such as deadlocks and Go-specific bug-hunting support for Go idioms (e.g., misuse of channels and locks) remain insufficiently addressed.
 
@@ -58,7 +55,7 @@ In other words, the runtime throws a deadlock exception when the \texttt{main} g
 %
 Since there is no blocking instruction in the \texttt{main} goroutine in listing \ref{listing:moby28462.minipage}, the program terminates successfully regardless of other goroutines' statuses.
 %
-However, this program suffers from a common bug in concurrent Go where one or more goroutines \textit{leak} (\ie \textit{partial deadlock}) from the execution (\ie never reach their end states).
+However, this program suffers from a common bug in concurrent Go where one or more goroutines \textit{leak} (\ie, \textit{partial deadlock}) from the execution (\ie, never reach their end states).
 
 %\stcmtside{Explain the deadlock (leak) situation that might get overlooked}
 %Due to the non-determinism introduced by the runtime scheduler and application-level random features like \texttt{select}, many interleavings are feasible for concurrent execution of simple programs such as listing \ref{listing:moby28462.minipage}.
@@ -74,9 +71,9 @@ Upon blocking on send, the scheduler transfers back the control to the \texttt{M
 The circular wait between the container mutex and channel prevents both spawned goroutines from reaching their end states and leaves the program in an unnoticed deadlock situation.
 %
 %\stcmtside{The thirst for novel and scalable debuggers}
-%Widely used deadlock detectors such as Goodlock \cite{havelund-goodlock-spin00} are not applicable in Go since causes of Go deadlocks are resources (\eg locking a locked mutex) or communication (\eg sending on a full channel), or a combination of them (\eg leaky interleaving of listing \ref{listing:moby28462.minipage}).
+%Widely used deadlock detectors such as Goodlock \cite{havelund-goodlock-spin00} are not applicable in Go since causes of Go deadlocks are resources (\eg, locking a locked mutex) or communication (\eg, sending on a full channel), or a combination of them (\eg, leaky interleaving of listing \ref{listing:moby28462.minipage}).
 %
-%In addition, due to the light-weight nature of goroutines, it is not uncommon to spawn thousands of goroutines in production software systems.
+%In addition, due to the lightweight nature of goroutines, it is not uncommon to spawn thousands of goroutines in production software systems.
 %
 %Hence,  novel and scalable techniques are needed to enable realistic modeling of program behavior during execution.
 %
@@ -86,54 +83,53 @@ The circular wait between the container mutex and channel prevents both spawned 
 \label{sec:goBugs}
 Based on a proposed bug taxonomy for Go \cite{tu-concurrentBugs-asplos19}, bugs are categorized separately based on their \textit{causes} (shared-memory vs. message-passing) and \textit{symptoms} (blocking vs. non-blocking).
 %
-Blocking bugs historically refer to situations where one or more processing units (\eg goroutines) are blocked, waiting for an external signal to resume (\eg leak situation in listing \ref{listing:moby28462.minipage}.
+Blocking bugs historically refer to situations where one or more processing units (\eg, goroutines) are blocked, waiting for an external signal to resume (\eg, leak situation in listing \ref{listing:moby28462.minipage}.
 %
 The observed causes of such blocking flaws in the context of Go are as follows:
 
 \begin{itemize}
-  \item \textit{Resource deadlocks}: Go inherits resource deadlocks from multithreaded languages like Java and C/Pthreads where goroutines are trapped in a circular wait for the resource (\eg mutex) that is held by other goroutines.
+  \item \textit{Resource deadlocks}: Go inherits resource deadlocks from multithreaded languages like Java and C/Pthreads where goroutines are trapped in a circular wait for the resource (\eg, mutex) that is held by other goroutines.
   \item \textit{Communication deadlocks}: Synchronized (unbuffered) channels transmit values from one goroutine to another in a rendezvous fashion. The sender (or receiver) blocks until the receiver (or sender) is ready to receive (send). Misuse of channel operations might result in one or more goroutines waiting for a sender/receiver to unblock them forever.
   \item \textit{Mixed deadlocks}: The leak situation in listing \ref{listing:moby28462.minipage} is the example of such deadlocks where one goroutine is blocked on acquiring a resource that is held by another goroutine which is blocked on communication.
 \end{itemize}
-\stcmtside{about race}
+
 Go inherited traditional non-blocking bugs such as data races and atomicity violations from older concurrent languages while introducing new bug idioms due to its new concepts such as anonymous functions \cite{tu-concurrentBugs-asplos19}.
 %
-In this work, our focus is on blocking bugs (\ie, partial and global deadlocks).
+This work focuses on blocking bugs (i.e., partial and global deadlocks).
 
-%
-\stcmt{below: Application-level non-determinism makes debugging more difficult}
+%\stcmt{below: Application-level non-determinism makes debugging more difficult}
 %\noindent{\bf Application-level non-determinism:\/}
 In addition to the non-deterministic nature of concurrent languages caused by the scheduler and interaction between concurrent components, Go introduces some level of non-determinism at the application level.
 %
 The \textit{select-case} statement (similar to switch-case) allows the goroutine to wait on multiple channel operations.
 %
-The runtime picks one case pseudo-randomly among available cases (\ie channel sends and receives that are ready to execute without blocking).
+The runtime picks one case pseudo-randomly among available cases (\ie, channel sends and receives that are ready to execute without blocking).
 %
 If none of the cases are ready, the executing goroutine is blocked unless there is a \textit{default} case.
 %
 The default case makes the select non-blocking and prevents the goroutine from waiting for unavailable communications.
 %
-Such random behavior expands the interleaving space and it grows exponentially when select statements are used in nested fashion within nested loops.
+Such random behavior expands the interleaving space, and it grows exponentially when nested selects are employed in conjunction with select loops.
 %
-Hence, root-causing the misbehaved execution of a buggy program becomes more challenging.
+As a result, tracing the cause of a program's misbehaved execution becomes increasingly tricky.
 %
-Our experiments/observations (section or table \ref{} **FIXME**) demonstrate that select statements are in the core of rare bugs.
+Our observations (section \ref{sec:evaluation}) demonstrate that select statements are in the core of rare bugs.
 
 
 \subsection{Accelerating Bug Exposure}
-Assuming the non-deterministic decisions that the scheduler makes is the main cause of blocking bugs, deadlocks may not manifest during conventional testing and are difficult to reproduce.
+Assuming the non-deterministic decisions that the scheduler makes are the main cause of blocking bugs, deadlocks may not manifest during conventional testing, and they are difficult to reproduce.
 %
 Even for simplified bug kernels, more than 30\% of bugs takes more than one execution to occur (figure \ref{fig:rare_bugs}).
 %
-A common approach for exercising the scheduler is \textit{stress testing} in which the program is executed many times with the hope for the bug to manifest.
+/textit{stress testing} is a common way to exercise the scheduler, in which the program is executed many times with the hope that the bug will reveal itself.
 %
-However, such testing is exponentially expensive and some interleavings might get tested repeatedly while other feasible interleavings remain untested.
+However, such testing is exponentially expensive, and some interleavings might get tested repeatedly while other feasible interleavings remain untested.
 %
-It is proved that a small level of randomness for each test execution can drastically reduce the number of testing iterations until the bug is exposed \cite{emmi-delayBounded-popl11}.
+Researchers have proven that a small amount of randomness in each test execution can drastically reduce the number of iterations needed to find the bug \cite{emmi-delayBounded-popl11}.
 %
 For instance, random context-switches before synchronization/serialization operations in concurrent programs increases the probability of finding rare concurrent bugs \cite{burckhardt-depthBug-asplos10}.
 %
-In listing \ref{listing:moby28462.minipage}, a rare context-switch right after the \texttt{select} statement in line \ref{bugListing:Monitor_select} causes the lock operation on mutex $m$ in line \ref{bugListing:Monitor_case_def_lock} of goroutine \texttt{Monitor} to \textit{block} goroutine \texttt{StatusChange} on locking $m$ in line \ref{bugListing:statChange_lock} and causing a deadlock.
+In listing \ref{listing:moby28462.minipage}, a rare context-switch after the \texttt{select} statement in line \ref{bugListing:Monitor_select} causes the lock operation on mutex $m$ in line \ref{bugListing:Monitor_case_def_lock} of goroutine \texttt{Monitor} to \textit{block} goroutine \texttt{StatusChange} on locking $m$ in line \ref{bugListing:statChange_lock} and causing a deadlock.
 %
 Concurrency primitive usages are the \textit{critical points} in the program because their behavior directly impacts the blocking behavior of Go programs.
 %
@@ -145,21 +141,21 @@ Results in section \ref{sec:evaluation} show that such simple delays are effecti
 
 \subsection{Testing Coverage Analysis}
 \label{sec:coverage}
-To demonstrate that testing has been thorough, \textit{coverage metrics} are defined to measure the progress of tests and specify testing termination condition.
+To demonstrate that testing has been thorough, \textit{coverage metrics} are defined to measure the progress of tests and specify testing termination conditions.
 %
 Coverage metric for the set of testing executions $\mathcal{T}$ is a set of \textit{requirements} $\mathcal{R}$ that should get covered during testing iterations.
 %
-We say requirement $R_i$ is covered during testing iteration $t \in \mathcal{T}$ if we can correlate an \textit{action} during execution of $t$ to $R_i$.
+We say requirement $R_i \in \mathcal{R}$ is covered during testing iteration $t_j \in \mathcal{T}$ if we can correlate an \textit{action} during execution of $t_j$ to $R_i$.
 %
-For example, in \textit{statement coverage}, which is a widely-used metric in testing sequential software, $R$ is the set of source locations (file and line numbers) in the target program
+For example, in \textit{statement coverage}, which is a widely-used metric in testing sequential software, $R$ is the set of source locations (file and line numbers) in the target program.
 %
 $R_i$ is covered by test execution $t$ if the statement at location $R_i$ is executed in $t$.
 %
 The \textit{coverage percentage} of a test $\mathcal{T}$ is the ratio of the requirements covered by at least one execution over the number of all requirements ($|R|$).
 
-As explained in section \ref{sec:bg}, concurrent software testing frameworks perform testing iterations to explore the schedule-space and expose flaws.
+Concurrent software testing frameworks perform testing iterations to explore the schedule space and expose flaws.
 %
-Depending on the class of target bug, different coverage metrics are proposed and used for concurrent software testing.
+Depending on the class of target bug, different coverage metrics are proposed to quantify the quality of search space exploration.
 %
 \textit{Synchronization} coverage metrics such as \textit{blocking-blocked} \cite{edelstein2003contest}, \textit{blocked-pair-follows} \cite{trainin-followsCoverage-padtad09} and \textit{synchronization-pair} \cite{hong-syncTesting-issta12} defined requirements to cover during testing for exposing blocking bugs (\eg deadlocks).
 %
@@ -172,20 +168,22 @@ The purpose of this requirement is to check if a test can report when there is a
 That is, a thread is either \textit{blocked} from entering the synchronization block or \textit{blocking} other threads from entering by holding the lock.
 %
 
-The existing concurrency coverage metrics are mostly in the context of Java and C/Pthreads and are not directly applicable to languages like Go as Go has different concurrncy primitives and semantics.
+The existing concurrency coverage metrics are primarily in the context of Java and C/Pthreads.
 %
-Novel coverage metrics are required to enable
+They are not directly applicable to languages like Go as such languages have different concurrency primitives and semantics.
 %
-Bron et. al,\cite{bron-appSyncCov-ppopp05} enumerates four major characteristics for coverage metrics to gain acceptance:
+Novel coverage metrics are required to enable the quantification of interleaving space exploration.
+%
+Bron et al.,\cite{bron-appSyncCov-ppopp05} enumerates four major characteristics for coverage metrics to gain acceptance:
 \begin{itemize}
-  \item \textbf{Fixed model:} The metric should be well-understood by the developer or tester. A static model of requirements from target program should be constructed by instrumenting the source-code. The model should maintain covered requirements during testing executions.
-  \item \textbf{Coverable and measurable requirements:} The absolute majority of reqiurements should be realistic enough to be \textit{coverable} during testing. For a few that are not coverable (due to program semantics) or not \textit{measurable} (because of technical limitations), the devloper should be aware of the reason.
-  \item \textbf{Actions for uncovered requirements:} After testing terminates, every uncovered requirement should yield an action (\eg extending testing iterations or removing dead code from the program thus removing uncoverable requirements)
+  \item \textbf{Fixed model:} The metric should be well-understood by the developer or tester. A static model of requirements from the given program should be constructed by instrumenting the source code. The model should maintain covered requirements during testing executions.
+  \item \textbf{Coverable and measurable requirements:} The absolute majority of requirements should be realistic enough to be \textit{coverable} during testing. For a few that are not coverable (due to program semantics) or not \textit{measurable} (because of technical limitations), the developer should be aware of the reason.
+  \item \textbf{Actions for uncovered requirements:} After testing terminates, every uncovered requirement should yield an action (\eg, extending testing iterations or removing dead code from the program, thus removing uncoverable requirements)
   \item \textbf{Coverage satisfaction:} Some action should be taken upon reaching a threshold of coverage percentage (e.g., testing phase termination when reaching 100\% statement coverage)
 \end{itemize}
 
-Defining a new coverage metric to satisfy above characteristics requires an accurate and proper mental model of target bugs.
+Defining a new coverage metric to satisfy the above characteristics requires an accurate and proper mental model of target bugs.
 %
-Using the \goat's infrastructure, we deep studied the underlying causes of many bugs including GoKer benchmark~\cite{yuan-gobench-cgo21} and proposed a set of coverage requirements that enables extensive analysis of dynamic behavior of concurrency primitives under various scheduling scenarios.
+Using the \goat's infrastructure, we deep studied the underlying causes of many bugs, including GoKer benchmark~\cite{yuan-gobench-cgo21} and proposed a set of coverage requirements that enables extensive analysis of dynamic behavior of concurrency primitives under various scheduling scenarios.
 %
-In section \ref{}, we describe our proposed coverage metric for testing concurrent Go which is extensible to all concurrent languages.
+In section \ref{sec:covreq}, we describe our proposed coverage metric for testing concurrent Go, which are extensible to all concurrent languages.

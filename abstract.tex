@@ -2,26 +2,19 @@ The use of increasing levels of parallelism and concurrency in system
 design---especially in a feature-rich language such as Go---demands
 effective concurrency debugging techniques that are easy to deploy in practice.
 %
-We present GoAT, a combined static and dynamic concurrency analysis
-and debugging approach
-that maximally takes advantage of Go's existing tooling infrastructure.
+We present \goat, a combined static and dynamic concurrency testing
+and analysis tool that facilitate the process of debugging for real-world programs.
 %
-Given the nascent state of Go debugging, our approach builds
-a debugging approach by deriving insights from recent Go bug benchmark
-suites.
-%
-Key ideas in GoAT include static instrumentation of yield-points
-at all concurrency sites followed by runtime selection of yields with
-a user-specified probability.
-%
-The approach in GoAT can coexist with existing dynamic Go verification tooling
-for memory leak detection and data race checking while adding significant
-new capabilities toward concurrency debugging.
+Key ideas in \goat include
+1) automated dynamic tracing to capture the behavior of concurrency primitives,
+2) systematic schedule space exploration to accelerate the bug occurance
+and 3) deadlock detection with supplementary visualizations and reports.
+We also propose a set of coverage requirements that characeterize the dynamic behavior of concurrency primitives and provide metrics to measure the quality of tests.
 %
 Our evaluation on 68 curated real-world bug scenarios
 demonstrates that GoAT is significantly effective in detecting
 rare bugs, and its schedule perturbation method based on schedule
-yielding detects these bugs within about five yields.
+yielding detects these bugs with less than three yields.
 %
 These results together with the ease of deploying GoAT on real-world
 Go programs holds significant promise in field-debugging of Go programs.

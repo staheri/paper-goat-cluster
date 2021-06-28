@@ -25,7 +25,7 @@ On the other hand, dynamic analysis approaches cover a more significant subset o
 %
 However, for large codebases with thousands of LOC, it is non-trivial to capture an accurate dynamic execution model using source instrumentation or source-to-source translation.
 %
-Furthermore, our experiments (section /ref{sec} **FIXME**) and results in /cite[yuan-gobench-cgo21] demonstrate that some buggy programs take more than 1,000 runs to give rise to the bug.
+Furthermore, our experiments (section \ref{sec:evaluation}) and results in \cite{yuan-gobench-cgo21} demonstrate that some buggy programs take more than 1,000 runs to give rise to the bug.
 %
 Concurrent testing methods~\cite{arora-concrrentTesting-16} are proposed to complement static and dynamic approaches in tackling challenges of concurrent debugging.
 %
@@ -70,7 +70,7 @@ By adopting ideas from \textit{systematic concurrency testing} approaches~\cite{
 %
 First, we statically identify the source location of concurrency primitive usages in a given program.
 %
-/goat handlers are then injected around these locations to manage schedule perturbation.
+\goat handlers are then injected around these locations to manage schedule perturbation.
 %
 At its simplest form, handlers randomly decide if the current goroutine should continue executing or \textit{yield} to other goroutines to execute first.
 %
@@ -101,5 +101,4 @@ To summarize, here are our main contributions:
     \item We propose a set of coverage requirements that characterize the dynamic behavior of concurrency primitives, enabling measurement of quality and progress of schedule-space exploration.
 \end{itemize}
 
-\stcmtside{need to update}
-The rest of this paper is as follows: Section \ref{sec:correctness} discusses correctness problems and approaches in Go. Section \ref{sec:ect} describes the enhancement we made to the tracer package. Section \ref{sec:disc} discusses the advantages of dynamic tracing for concurrent debugging and draws the ongoing and future direction of the current work. At last, section \ref{sec:summary} summarizes and concludes.
+The rest of this paper is as follows: Section \ref{sec:bg} discusses the fundamentals about concurrency debugging in Go and ideas behind \goat. Section \ref{sec:design} illustreate the design and implementation of \goat's components. The evaluation of \goat on GoKer bug benchmark is illustrated in section \ref{sec:evaluation}. Section \ref{sec:related} discusses the related work and finally, section \ref{sec:summary} summarizes and concludes.
