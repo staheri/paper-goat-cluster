@@ -15,12 +15,12 @@
 
 \subsection{Deadlock Detection}
 \label{sec:dl_evaluation}
-In this section, we assess the ability of \goat and its variations in detecting bugs with minimum number of executions required to expose the bug.
+We assess the ability of \goat and its variations in detecting bugs with minimum number of executions required to expose the bug.
 %
 We have compared \goat against three existing dynamic detectors:
 \begin{itemize}
-  \item \textit{Built-in} Deadlock Detector: It is an embeded mechanism in the standard Go runtime. The mechanism periodically makes sure that the queue of \textit{runnable} goroutines is never empty until the main goroutine terminates. If the queue is empty and main has not terminated yet (\ie main is blocked), it throws a runtime error.
-  \item \textit{goleak} \cite{goleak}: This leak detector from Uber checks the program stack at the end of the main goroutine to find the application-level goroutines that remained in the stack (\ie leaked).
+  \item \textit{Built-in} deadlock detector: It is an embeded mechanism in the standard Go runtime. The mechanism periodically makes sure that the queue of \textit{runnable} goroutines is never empty until the main goroutine terminates. If the queue is empty and main has not terminated yet (\ie main is blocked), it throws a runtime error.
+  \item \textit{goleak} \cite{goleak}: This leak detector from Uber checks the program stack at the end of the main goroutine's execution to find the application-level goroutines that remained in the stack (\ie leaked).
   \item \textit{LockDL} \cite{lockdl}: This tool intercept with all mutex locks and unlocks of the target application to maintain a ``lock-set'' data structure. \textit{LockDL} issues warning during runtime when it finds a circular wait in the lock-set or double-locking the same lock. It has a timeout mechanism for application that traps into global deadlocks (30 seconds by default).
 \end{itemize}
 
@@ -70,6 +70,6 @@ Recall that D is the bound on the number of yields that we inject to the native 
 %
 These figures show that the increase of number of delays grows the rate of coverage percentage.
 %
-However, higher number of delays do not necessarily increase the coverage (D2 and D4 in figure \ref{fig:kubernetes_coverage})
+However, higher number of delays do not necessarily increase the coverage (D2 and D4 in figure \ref{fig:kubernetes_coverage}).
 %
 The drop in coverage for D1 in figure \ref{fig:kubernetes_coverage} is because of the new coverage requirements (\eg, a new goroutine is spawned and executing some concurrency primitives) that were encountered during testing execution.
