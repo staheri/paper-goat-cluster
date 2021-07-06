@@ -78,7 +78,6 @@ The circular wait between the container mutex and channel prevents both spawned 
 %Hence,  novel and scalable techniques are needed to enable realistic modeling of program behavior during execution.
 %
 
-
 \subsection{Concurrency Bugs in Go}
 \label{sec:goBugs}
 Based on a proposed bug taxonomy for Go \cite{tu-concurrentBugs-asplos19}, bugs are categorized separately based on their \textit{causes} (shared-memory vs. message-passing) and \textit{symptoms} (blocking vs. non-blocking).
@@ -93,7 +92,7 @@ The observed causes of such blocking flaws in the context of Go are as follows:
   \item \textit{Mixed deadlocks}: The leak situation in listing \ref{listing:moby28462.minipage} is the example of such deadlocks where one goroutine is blocked on acquiring a resource that is held by another goroutine which is blocked on communication.
 \end{itemize}
 
-Go inherited traditional non-blocking bugs such as data races and atomicity violations from older concurrent languages while introducing new bug idioms due to its new concepts such as anonymous functions \cite{tu-concurrentBugs-asplos19}.
+Similar to other concurrent languages, Go has non-blocking bugs such as data races and atomicity violations while introducing new bug idioms due to its new concepts such as anonymous functions \cite{tu-concurrentBugs-asplos19}.
 %
 This work focuses on blocking bugs (i.e., partial and global deadlocks).
 
@@ -109,35 +108,39 @@ If none of the cases are ready, the executing goroutine is blocked unless there 
 %
 The default case makes the select non-blocking and prevents the goroutine from waiting for unavailable communications.
 %
-Such random behavior expands the interleaving space, and it grows exponentially when nested selects are employed in conjunction with select loops.
+Such random behavior expands the interleaving space, and it grows exponentially when nested selects are employed in conjunction with nested loops.
 %
 As a result, tracing the cause of a program's misbehaved execution becomes increasingly tricky.
 %
-Our observations (section \ref{sec:evaluation}) demonstrate that select statements are in the core of rare bugs.
+Our observations (section \ref{sec:evaluation}) demonstrate that \textbf{select statements are in the core of rare bugs}.
 
 
 \subsection{Accelerating Bug Exposure}
-Assuming the non-deterministic decisions that the scheduler makes are the main cause of blocking bugs, deadlocks may not manifest during conventional testing, and they are difficult to reproduce.
+Blocking bugs are primarily caused by the non-deterministic decisions that the scheduler makes.
 %
-Even for simplified bug kernels, more than 30\% of bugs takes more than one execution to occur (figure \ref{fig:rare_bugs}).
+Such bugs may not manifest themselves in conventional testing and are difficult to reproduce.
 %
-/textit{stress testing} is a common way to exercise the scheduler, in which the program is executed many times with the hope that the bug will reveal itself.
+Figure \ref{fig:rare_bugs} displays the histogram of 68 blocking bug kernels grouped by the number of trials that \goat takes to detect them.
 %
-However, such testing is exponentially expensive, and some interleavings might get tested repeatedly while other feasible interleavings remain untested.
+Approximately 30\% of bugs required more than one execution to happen and be detected by \goat.
 %
-Researchers have proven that a small amount of randomness in each test execution can drastically reduce the number of iterations needed to find the bug \cite{emmi-delayBounded-popl11}.
+\textit{stress testing} is a common way to detect such rare bugs by exercising the scheduler and examine the program's behavior in many executions.
+%
+However, such testing is inefficient because some interleavings might get tested repeatedly while other feasible interleavings remain untested.
+%
+Researchers have proven that a small amount of randomness in each test execution can drastically reduce the number of iterations needed to find concurrency bugs \cite{emmi-delayBounded-popl11}.
 %
 For instance, random context-switches before synchronization/serialization operations in concurrent programs increases the probability of finding rare concurrent bugs \cite{burckhardt-depthBug-asplos10}.
 %
 In listing \ref{listing:moby28462.minipage}, a rare context-switch after the \texttt{select} statement in line \ref{bugListing:Monitor_select} causes the lock operation on mutex $m$ in line \ref{bugListing:Monitor_case_def_lock} of goroutine \texttt{Monitor} to \textit{block} goroutine \texttt{StatusChange} on locking $m$ in line \ref{bugListing:statChange_lock} and causing a deadlock.
 %
-Concurrency primitive usages are the \textit{critical points} in the program because their behavior directly impacts the blocking behavior of Go programs.
+Concurrency primitive usages (\eg, channel send/recv, mutex lock/unlock, select) are the \textit{critical points} in the program because their behavior directly impacts the blocking behavior of Go programs.
 %
-In \goat, we statically identify such critical points and inject delay handlers before each concurrency primitive usage.
+In \goat, we statically identify such critical points and inject \textit{yield} handlers before each concurrency primitive usage.
 %
-During execution, the handlers randomly decide if the current goroutine should \textit{yield} to other goroutines to execute.
+During execution, the handlers randomly decide if the current goroutine should yield to other goroutines to execute.
 %
-Results in section \ref{sec:evaluation} show that such simple delays are effective in detecting rare bugs.
+Results in section \ref{sec:evaluation} show that such simple yields are effective in detecting rare bugs.
 
 \subsection{Testing Coverage Analysis}
 \label{sec:coverage}
@@ -168,6 +171,18 @@ The purpose of this requirement is to check if a test can report when there is a
 That is, a thread is either \textit{blocked} from entering the synchronization block or \textit{blocking} other threads from entering by holding the lock.
 %
 
+
+
+\begin{figure}[]
+\centering
+\includegraphics[width=0.8\linewidth]{figs/coverage_motivation.pdf}
+%\includegraphics[]{figs/overview.png}
+%\includegraphics[]{figs/overv}
+\caption{Distribution of number of trials for \goat (D0) to detect 68 blocking bugs in GoKer~\cite{yuan-gobench-cgo21}}
+\label{fig:rare_bugs}
+\end{figure}
+
+
 The existing concurrency coverage metrics are primarily in the context of Java and C/Pthreads.
 %
 They are not directly applicable to languages like Go as such languages have different concurrency primitives and semantics.
@@ -175,12 +190,12 @@ They are not directly applicable to languages like Go as such languages have dif
 Novel coverage metrics are required to enable the quantification of interleaving space exploration.
 %
 Bron et al.,\cite{bron-appSyncCov-ppopp05} enumerates four major characteristics for coverage metrics to gain acceptance:
-\begin{itemize}
-  \item \textbf{Fixed model:} The metric should be well-understood by the developer or tester. A static model of requirements from the given program should be constructed by instrumenting the source code. The model should maintain covered requirements during testing executions.
+\begin{enumerate}
+  \item \textbf{Static model:} A static model of requirements from the given program should be constructed by instrumenting the source code. The model should be well-understood by the developer or tester before execution. The model should maintain covered requirements during testing executions.
   \item \textbf{Coverable and measurable requirements:} The absolute majority of requirements should be realistic enough to be \textit{coverable} during testing. For a few that are not coverable (due to program semantics) or not \textit{measurable} (because of technical limitations), the developer should be aware of the reason.
   \item \textbf{Actions for uncovered requirements:} After testing terminates, every uncovered requirement should yield an action (\eg, extending testing iterations or removing dead code from the program, thus removing uncoverable requirements)
   \item \textbf{Coverage satisfaction:} Some action should be taken upon reaching a threshold of coverage percentage (e.g., testing phase termination when reaching 100\% statement coverage)
-\end{itemize}
+\end{enumerate}
 
 Defining a new coverage metric to satisfy the above characteristics requires an accurate and proper mental model of target bugs.
 %

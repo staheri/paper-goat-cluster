@@ -1,7 +1,7 @@
 \begin{figure}
 \centering
   \includegraphics[width=.95\linewidth]{figs/P4_detections.pdf}
-  \caption{Distribution of detected bugs by built-in deadlock detector (BUILTINDL), LockDL, GoLeak, and GOAT different D over 1000 runs. PDL: partial deadlock, GDL/TO: global deadlock, Crash/Halt: causes the program to crash or halt during detection, X: nothing is detected }
+  \caption{Histogram of detected bugs by each tool performed on 68 GoKer blocking bugs. PDL: partial deadlock, GDL/TO: global deadlock, Crash/Halt: causes the program to crash or halt during detection, X: nothing is detected }
   \label{fig:detection}
 \end{figure}
 
@@ -9,7 +9,7 @@
 \begin{figure}
 \centering
   \includegraphics[width=.95\linewidth]{figs/P4_runs.pdf}
-  \caption{Distribution of required number of iterations to detect the bug for each tool}
+  \caption{Histogram of required number of iterations by each tool to detect 68 GoKer blocking bugs}
   \label{fig:runs}
 \end{figure}
 
@@ -20,8 +20,8 @@ We assess the ability of \goat and its variations in detecting bugs with minimum
 We have compared \goat against three existing dynamic detectors:
 \begin{itemize}
   \item \textit{Built-in} deadlock detector: It is an embeded mechanism in the standard Go runtime. The mechanism periodically makes sure that the queue of \textit{runnable} goroutines is never empty until the main goroutine terminates. If the queue is empty and main has not terminated yet (\ie main is blocked), it throws a runtime error.
-  \item \textit{goleak} \cite{goleak}: This leak detector from Uber checks the program stack at the end of the main goroutine's execution to find the application-level goroutines that remained in the stack (\ie leaked).
   \item \textit{LockDL} \cite{lockdl}: This tool intercept with all mutex locks and unlocks of the target application to maintain a ``lock-set'' data structure. \textit{LockDL} issues warning during runtime when it finds a circular wait in the lock-set or double-locking the same lock. It has a timeout mechanism for application that traps into global deadlocks (30 seconds by default).
+  \item \textit{goleak} \cite{goleak}: This leak detector from Uber checks the program stack at the end of the main goroutine's execution to find the application-level goroutines that remained in the stack (\ie leaked).
 \end{itemize}
 
 \stcmtside{fix}

@@ -19,17 +19,17 @@ In Go, constructs like \textit{select} and buffered channels entangle the proces
 %
 Recent static~\cite{ng-dl-cc16,stadtmuller-minigo-aplas16,lange-fence-popl17,lange-staticType-icse18} and dynamic~\cite{go-race-blog,zhao-occam97,sulzmann-corr17,sulzmann-twophase-2018,dilley-gomela-corr2020} techniques have been proposed to address these challenges.
 %
-Although static methods are proved to be rigorously effective in detecting flaws in small programs, they often produce false positives and suffer from state explosion problems for realistic programs.
+Although static methods are proved to be rigorously effective in detecting flaws in small programs, they are not practical for realistic programs and often produce false positives.
 %
 On the other hand, dynamic analysis approaches cover a more significant subset of real-world programs by constructing and analyzing an \textit{execution model}.
 %
 However, for large codebases with thousands of LOC, it is non-trivial to capture an accurate dynamic execution model using source instrumentation or source-to-source translation.
 %
-Furthermore, our experiments (section \ref{sec:evaluation}) and results in \cite{yuan-gobench-cgo21} demonstrate that some buggy programs take more than 1,000 runs to give rise to the bug.
+Furthermore, our experiments (section \ref{sec:evaluation}) and results in \cite{yuan-gobench-cgo21} demonstrate that some buggy programs take more than 1,000 runs under different schedules to give rise to the bug.
 %
 Concurrent testing methods~\cite{arora-concrrentTesting-16} are proposed to complement static and dynamic approaches in tackling challenges of concurrent debugging.
 %
-To the best of our knowledge, there exist no such testing methods applicable to Go semantics.
+To the best of our knowledge, there exist no such testing methods applicable to Go.
 %
 
 \begin{figure*}[]
@@ -49,7 +49,7 @@ We implemented \goat (\textbf{Go} \textbf{A}nalysis and \textbf{T}esting), a deb
 Several classic ideas from literature are combined with novel ones to support modern concepts of Go in \goat, which pursues three primary objectives:
 \\
 \noindent{\bf Objective 1:\/} \textit{Accurate Dynamic Execution Modeling}---
-To study the behavior of concurrent components and track the program's state during execution, a dynamic execution model has to construct to get compared against a pre-defined model (\eg, formally defined specification or developer's mental model of the program).
+In order to study the behavior of concurrent components and track the state of the program during execution, a dynamic execution model has to be constructed and compared against a predefined model (e.g., formally defined specifications or the developer's mental representation of the program).
 %
 It is crucial for debuggers and software analysis tools to construct their execution models as close as possible to the actual program execution context.
 %
@@ -59,9 +59,9 @@ We have enhanced the built-in tracing mechanism of Go~\cite{ect-arxiv} to captur
 %
 Each event in ECT represents an \textit{action} that corresponds to exactly one statement in the source code.
 %
-An ECT provides a detailed model of how a program behaves dynamically and assists debugging procedures (e.g., bug detection, root-cause analysis, execution visualization).
+An ECT provides a detailed model of how a concurrent program behaves dynamically and assists debugging procedures (e.g., bug detection, root-cause analysis, execution visualization).
 %
-Our experiments show that by replaying the program's ECT, \goat detects all blocking bugs of GoKer~\cite{yuan-gobench-cgo21} many of which are overlooked or undetected by existing debugging tools.
+Our experiments show that by replaying the program's ECT, \goat detects all blocking bugs of GoKer~\cite{yuan-gobench-cgo21} many of which are undetected by existing debugging tools.
 \\
 \noindent{\bf Objective 2:\/} \textit{Systematic Exploration of Schedule-Space}---
 Since the scheduler's non-deterministic behavior is the primary reason for Heisenbugs (\ie, errors that are uncommon to occur and hard to reproduce), these bugs may not manifest during conventional testing.
@@ -74,7 +74,7 @@ First, we statically identify the source location of concurrency primitive usage
 %
 At its simplest form, handlers randomly decide if the current goroutine should continue executing or \textit{yield} to other goroutines to execute first.
 %
-Such yields change the blocking behavior of the program within the space of feasible states and exercise untested interleavings, consequently heighten the propensity for bug introduction.
+Such yields change the blocking behavior of the program within the space of feasible states and exercise untested interleavings, consequently heighten the propensity for bug detection.
 %
 The results of our experiments indicate that just a few random schedule perturbations can accelerate the exposure of rare bugs.
 
