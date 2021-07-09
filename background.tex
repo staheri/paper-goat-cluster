@@ -112,7 +112,7 @@ Such random behavior expands the interleaving space, and it grows exponentially 
 %
 As a result, tracing the cause of a program's misbehaved execution becomes increasingly tricky.
 %
-Our observations (section \ref{sec:evaluation}) demonstrate that \textbf{select statements are in the core of rare bugs}.
+Our observations (section \ref{sec:evaluation}) demonstrate that \textbf{select statements are involved at the center of many rare bugs}.
 
 
 \subsection{Accelerating Bug Exposure}
@@ -128,9 +128,9 @@ Approximately 30\% of bugs required more than one execution to happen and be det
 %
 However, such testing is inefficient because some interleavings might get tested repeatedly while other feasible interleavings remain untested.
 %
-Researchers have proven that a small amount of randomness in each test execution can drastically reduce the number of iterations needed to find concurrency bugs \cite{emmi-delayBounded-popl11}.
+It has been empirically demonstrated that a small amount of randomness in each test execution can drastically reduce the number of iterations needed to find concurrency bugs \cite{thomson-concurrencyTesting-ppopp14,emmi-delayBounded-popl11}.
 %
-For instance, random context-switches before synchronization/serialization operations in concurrent programs increases the probability of finding rare concurrent bugs \cite{burckhardt-depthBug-asplos10}.
+For instance, forcing context-switches before synchronization/serialization operations in concurrent programs increases the probability of finding rare concurrent bugs \cite{burckhardt-depthBug-asplos10}.
 %
 In listing \ref{listing:moby28462.minipage}, a rare context-switch after the \texttt{select} statement in line \ref{bugListing:Monitor_select} causes the lock operation on mutex $m$ in line \ref{bugListing:Monitor_case_def_lock} of goroutine \texttt{Monitor} to \textit{block} goroutine \texttt{StatusChange} on locking $m$ in line \ref{bugListing:statChange_lock} and causing a deadlock.
 %
@@ -185,7 +185,7 @@ That is, a thread is either \textit{blocked} from entering the synchronization b
 
 The existing concurrency coverage metrics are primarily in the context of Java and C/Pthreads.
 %
-They are not directly applicable to languages like Go as such languages have different concurrency primitives and semantics.
+They are not necessarily applicable to languages like Go as such languages have different concurrency primitives and semantics.
 %
 Novel coverage metrics are required to enable the quantification of interleaving space exploration.
 %
@@ -199,6 +199,6 @@ Bron et al.,\cite{bron-appSyncCov-ppopp05} enumerates four major characteristics
 
 Defining a new coverage metric to satisfy the above characteristics requires an accurate and proper mental model of target bugs.
 %
-Using the \goat's infrastructure, we deep studied the underlying causes of many bugs, including GoKer benchmark~\cite{yuan-gobench-cgo21} and proposed a set of coverage requirements that enables extensive analysis of dynamic behavior of concurrency primitives under various scheduling scenarios.
+Using the \goat's infrastructure, we studied the underlying causes of many bugs, including GoKer benchmark~\cite{yuan-gobench-cgo21} and propose a set of coverage requirements that enables extensive analysis of dynamic behavior of concurrency primitives under various scheduling scenarios.
 %
 In section \ref{sec:covreq}, we describe our proposed coverage metric for testing concurrent Go, which are extensible to all concurrent languages.
