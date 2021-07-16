@@ -9,9 +9,9 @@ Go introduces a new concurrency model, mixing shared-memory features of language
 %
 The language is equipped with a rich vocabulary of \textit{serialization} features to facilitate the memory model constraints~\cite{go-memModel}; they include synchronous and asynchronous communication, memory protection, and barriers for efficient synchronization:
 \begin{itemize}
-    \item \textbf{Goroutines} are functions that execute concurrently on logical processors having their own stack.
+    \item \textbf{Goroutines} are functions that execute concurrently on logical processors.
     \item \textbf{Channels} are typed conduits through which goroutines communicate.  Channels are unbuffered by default, providing synchronous (rendezvous) or asynchronous (via buffered channels) messaging between goroutines.
-    \item \textbf{Synchronization} features such as \textit{(RW)mutex}, \textit{waitGroup}, \textit{conditional variables}, \textit{select}, and \textit{context} are included in the language to provide more and flexible synchronization, data access serialization, memory protection, and error handling.
+    \item \textbf{Synchronization} features such as \textit{(RW)mutex}, \textit{waitGroup}, \textit{conditional variables}, and \textit{select} are included in the language to provide more and flexible synchronization, data access serialization, and memory protection.
     \item \textbf{Scheduler} maintains goroutines in FIFO queues and binds them on OS threads to execute on processing cores.
 \end{itemize}
 
@@ -51,7 +51,7 @@ Based on the Go specification and memory model, there is no constraint on the go
 %
 A deadlock detector within the runtime periodically checks that the scheduler queues of all \textit{runnable} goroutines never become empty until the \texttt{main} goroutine terminates.
 %
-In other words, the runtime throws a deadlock exception when the \texttt{main} goroutine is blocked, and no other goroutine is in the queue to execute (\ie \textit{global deadlock}).
+In other words, the runtime throws a deadlock exception when the \texttt{main} goroutine is blocked, and no other goroutine is in the queue to execute (\ie, \textit{global deadlock}).
 %
 Since there is no blocking instruction in the \texttt{main} goroutine in listing \ref{listing:moby28462.minipage}, the program terminates successfully regardless of other goroutines' statuses.
 %
@@ -88,7 +88,7 @@ The observed causes of such blocking flaws in the context of Go are as follows:
 
 \begin{itemize}
   \item \textit{Resource deadlocks}: Go inherits resource deadlocks from multithreaded languages like Java and C/Pthreads where goroutines are trapped in a circular wait for the resource (\eg, mutex) that is held by other goroutines.
-  \item \textit{Communication deadlocks}: Synchronized (unbuffered) channels transmit values from one goroutine to another in a rendezvous fashion. The sender (or receiver) blocks until the receiver (or sender) is ready to receive (send). Misuse of channel operations might result in one or more goroutines waiting for a sender/receiver to unblock them forever.
+  \item \textit{Communication deadlocks}: Synchronized (unbuffered) channels transmit values from one goroutine to another in a rendezvous fashion. The sender (receiver) blocks until the receiver (sender) is ready to receive (send). Misuse of channel operations might result in one or more goroutines waiting for a sender/receiver to unblock them forever.
   \item \textit{Mixed deadlocks}: The leak situation in listing \ref{listing:moby28462.minipage} is the example of such deadlocks where one goroutine is blocked on acquiring a resource that is held by another goroutine which is blocked on communication.
 \end{itemize}
 
@@ -122,9 +122,9 @@ Such bugs may not manifest themselves in conventional testing and are difficult 
 %
 Figure \ref{fig:rare_bugs} displays the histogram of 68 blocking bug kernels grouped by the number of trials that \goat takes to detect them.
 %
-Approximately 30\% of bugs required more than one execution to happen and be detected by \goat.
+Approximately 30\% of bugs required more than one execution to happen and be detected by \goat\footnote{The figure and numbers are obtained from trials of \goat on native execution of bug kernels without any randomization (\ie, $D=0$).}.
 %
-\textit{stress testing} is a common way to detect such rare bugs by exercising the scheduler and examine the program's behavior in many executions.
+\textit{Stress testing} is a common way to detect such rare bugs by exercising the scheduler and examine the program's behavior in many executions.
 %
 However, such testing is inefficient because some interleavings might get tested repeatedly while other feasible interleavings remain untested.
 %
@@ -156,9 +156,7 @@ $R_i$ is covered by test execution $t$ if the statement at location $R_i$ is exe
 %
 The \textit{coverage percentage} of a test $\mathcal{T}$ is the ratio of the requirements covered by at least one execution over the number of all requirements ($|R|$).
 
-Concurrent software testing frameworks perform testing iterations to explore the schedule space and expose flaws.
-%
-Depending on the class of target bug, different coverage metrics are proposed to quantify the quality of search space exploration.
+In the context of concurrent software testing, coverage metrics are proposed to quantify the quality of search space exploration.
 %
 \textit{Synchronization} coverage metrics such as \textit{blocking-blocked} \cite{edelstein2003contest}, \textit{blocked-pair-follows} \cite{trainin-followsCoverage-padtad09} and \textit{synchronization-pair} \cite{hong-syncTesting-issta12} defined requirements to cover during testing for exposing blocking bugs (\eg deadlocks).
 %
@@ -175,17 +173,17 @@ That is, a thread is either \textit{blocked} from entering the synchronization b
 
 \begin{figure}[]
 \centering
-\includegraphics[width=0.8\linewidth]{figs/coverage_motivation.pdf}
+\includegraphics[width=0.7\linewidth]{figs/coverage_motivation.pdf}
 %\includegraphics[]{figs/overview.png}
 %\includegraphics[]{figs/overv}
-\caption{Distribution of number of trials for \goat (D0) to detect 68 blocking bugs in GoKer~\cite{yuan-gobench-cgo21}}
+\caption{Distribution of number of trials falling into given intervals to detect 68 blocking bugs in GoKer~\cite{yuan-gobench-cgo21} using \goat ($D0$)}
 \label{fig:rare_bugs}
 \end{figure}
 
 
 The existing concurrency coverage metrics are primarily in the context of Java and C/Pthreads.
 %
-They are not necessarily applicable to languages like Go as such languages have different concurrency primitives and semantics.
+They are not necessarily applicable to languages like Go, as such languages have different concurrency primitives and semantics.
 %
 Novel coverage metrics are required to enable the quantification of interleaving space exploration.
 %
@@ -201,4 +199,4 @@ Defining a new coverage metric to satisfy the above characteristics requires an 
 %
 Using the \goat's infrastructure, we studied the underlying causes of many bugs, including GoKer benchmark~\cite{yuan-gobench-cgo21} and propose a set of coverage requirements that enables extensive analysis of dynamic behavior of concurrency primitives under various scheduling scenarios.
 %
-In section \ref{sec:covreq}, we describe our proposed coverage metric for testing concurrent Go, which are extensible to all concurrent languages.
+In section \ref{sec:covreq}, we describe our proposed coverage metric for testing concurrent Go, which is extensible to all concurrent languages.

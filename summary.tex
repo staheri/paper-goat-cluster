@@ -1,24 +1,19 @@
 We presented \goat, an analysis and testing framework for concurrent Go applications to assist concurrency debugging of real-world applications.
 %
-\goat combines static and dynamic methods to model and explore application execution.
+\goat combines static and dynamic methods to model and explores application execution.
 %
-The scheduler behavior is pertubed with automatically injected random delays to accelerate the exposure of bug, if any.
+The scheduler behavior is perturbed with automatically injected random delays to accelerate bug exposure if any.
 %
-By dynamic measurment of a set of coverage requirements, we quantify the quality of schedule-space exploration of \goat.
+By dynamic measurement of a set of coverage requirements, we quantify the quality of schedule-space exploration of \goat.
 %
-\goat detects all 68 blocking bugs of GoKer benchmark which are the bug kernels of top nine open-soruce projects written in Go.
+\goat detects all 68 blocking bugs of GoKer benchmark, which are the bug kernels of the top nine open-source projects written in Go.
 %
 The schedule perturbation showed effectiveness in accelerating the bug exposure.
 %
 Proposed coverage requirements accurately reflect the dynamic behavior of program executions and testing iterations.
 
-Engineering of \goat is flexible and extensible to more advanced components.
+The engineering of \goat is flexible and extensible to more advanced components.
 %
-For example, current minimal \goat engine can be extended to take the full control over the Go scheduler and ``guide'' testing towards untested interleaving.
+For example, the current minimal \goat engine can be extended to take full control over the Go scheduler and ``guide'' testing towards untested interleaving.
 %
-\stcmtside{fix when done}
-We are dockerizing \goat for easy and public use.
-%
-We want to test on real-world programs.
-%
-The data that ECT includes is rich enough for training accurate models and apply machine learning methods to learn and predict bug patterns.
+We are dockerizing \goat for easy and public use, making it practical for production testing.

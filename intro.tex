@@ -19,7 +19,7 @@ In Go, constructs like \textit{select} and buffered channels entangle the proces
 %
 Recent static~\cite{ng-dl-cc16,stadtmuller-minigo-aplas16,lange-fence-popl17,lange-staticType-icse18} and dynamic~\cite{go-race-blog,zhao-occam97,sulzmann-corr17,sulzmann-twophase-2018,dilley-gomela-corr2020} techniques have been proposed to address these challenges.
 %
-GoBench \cite{yuan-gobench-cgo21} gathers a collection of real concurrency bugs (GoReal) and simplified bug kernels (GoKer) from top 9 open-source projects written in Go and evaluated the effectivness such techniques in detecting the bug collection.
+GoBench \cite{yuan-gobench-cgo21} gathers a collection of real concurrency bugs (GoReal) and simplified bug kernels (GoKer) from the top 9 open-source projects written in Go and evaluated the effectiveness of such techniques in detecting the bug collection.
 %
 Although static methods are proved to be rigorously effective in detecting flaws in small programs, they are not practical for realistic programs and often produce false positives.
 %
@@ -38,7 +38,7 @@ To the best of our knowledge, there exist no such testing methods applicable to 
 
 \begin{figure*}[]
 \centering
-\includegraphics[width=0.99\linewidth]{figs/GOAT_overview.pdf}
+\includegraphics[width=0.9\linewidth]{figs/GOAT_overview.pdf}
 %\includegraphics[]{figs/overview.png}
 %\includegraphics[]{figs/overv}
 \caption{\goat Overview}
@@ -57,11 +57,11 @@ Several classic ideas from literature are combined with novel ones to support mo
 \noindent{\bf Objective 1:\/} \textit{Accurate Dynamic Execution Modeling}---
 In order to study the behavior of concurrent components and track the state of the program during execution, a dynamic execution model has to be constructed and compared against a predefined model (e.g., formally defined specifications or the developer's mental representation of the program).
 %
-It is crucial for debuggers and software analysis tools to construct their execution models as close as possible to the actual program execution context.
+%It is crucial for debuggers and software analysis tools to construct their execution models as close as possible to the actual program execution context.
 %
 Since a bug might occur at various levels of abstraction, \textit{whole-program dynamic tracing} provides a practical and uniform way to track multiple facets of the program during execution~\cite{difftrace}.
 %
-We have enhanced the built-in tracing mechanism of Go~\cite{ect-arxiv} to capture the dynamic behavior of concurrency primitives in the form of a \textit{sequence of events}, namely \textit{execution concurrency trace} or ECT.
+We have enhanced the built-in tracing mechanism of Go to capture the dynamic behavior of concurrency primitives in the form of a \textit{sequence of events}, namely \textit{execution concurrency trace} or ECT.
 %
 Each event in ECT represents an \textit{action} that corresponds to exactly one statement in the source code.
 %
@@ -76,9 +76,7 @@ By adopting ideas from \textit{systematic concurrency testing} approaches~\cite{
 %
 First, we statically identify the source location of concurrency primitive usages in a given program.
 %
-We then inject handlers of context-switching calls around these locations to manage schedule perturbation.
-%
-At its simplest form, handlers randomly (with a certain probablity and within a bound) decide if the current goroutine should continue executing or \textit{yield} to other goroutines to execute first.
+We then inject handlers these locations to randomly (with a certain probability and within a bound) decide if the current goroutine should continue executing or \textit{yield} to other goroutines to execute first.
 %
 Such yields change the blocking behavior of the program within the space of feasible states and exercise untested interleavings, consequently heighten the propensity for bug detection.
 %
@@ -91,7 +89,7 @@ In the context of concurrent software, exisiting coverage metrics~\cite{edelstei
 %
 Such characterizations involve defining an initial set of requirements and a method for assessing whether or not those requirements are met during testing.
 %
-Since Go combines traditional synchronization and serialization primitives~(mutex, conditional variables) with message-passing and introduces new concepts such as \textit{select-case}~(non-deterministic communication and synchronization), new coverage requirements are required to characterize the behavior of Go concurrency.
+Since Go combines traditional synchronization and serialization primitives~(mutex, conditional variables) with message-passing and introduces new concepts such as \textit{select-case}, new coverage requirements are required to characterize the behavior of Go concurrency.
 %
 Using the \goat's infrastructure, we studied the underlying causes of bugs in GoKer benchmark~\cite{yuan-gobench-cgo21} and proposed a set of coverage requirements that 1) coherently characterize the dynamic behavior of concurrency primitives under various scheduling scenarios and 2) enable measurement of schedule-space exploration until reaching a threshold, or exposing the bug.
 %
