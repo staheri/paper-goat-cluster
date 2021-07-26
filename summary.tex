@@ -1,14 +1,12 @@
-We presented \goat, an analysis and testing framework for concurrent Go applications to assist concurrency debugging of real-world applications.
+We presented \goat, a testing framework for concurrent Go applications to assist concurrency debugging of real-world applications.
 %
 \goat combines static and dynamic methods to model and explores application execution.
 %
-The scheduler behavior is perturbed with automatically injected random delays to accelerate bug exposure if any.
-%
-By dynamic measurement of a set of coverage requirements, we quantify the quality of schedule-space exploration of \goat.
-%
 \goat detects all 68 blocking bugs of GoKer benchmark, which are the bug kernels of the top nine open-source projects written in Go.
 %
-The schedule perturbation showed effectiveness in accelerating the bug exposure.
+The scheduler behavior is perturbed with automatically injected random delays to accelerate the bug exposure.
+%
+By dynamic measurement of a set of coverage requirements, we quantify the quality of schedule-space exploration of \goat.
 %
 Proposed coverage requirements accurately reflect the dynamic behavior of program executions and testing iterations.
 

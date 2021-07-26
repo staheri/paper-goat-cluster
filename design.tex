@@ -2,7 +2,7 @@
 \label{sec:overview}
 Figure \ref{fig:goat_workflow} displays the overview of \goat.
 %
-Given a program \textbf{P} (\ie, a set of Go source files with a \textit{main} function), \goat automatically instruments \textbf{P} and constructs static and dynamic models to facilitate the investigation of \textit{non-deterministic interactions between concurrent components} (\ie, concurrent behavior) of \textbf{P}, and achieve objectives acquainted in section \ref{sec:intro}.
+Given a program \textbf{P} (\ie, a set of Go source files with a \textit{main} function), \goat automatically instruments \textbf{P} and constructs static and dynamic models to facilitate the investigation of \textit{non-deterministic interactions between concurrent components} (\ie, concurrent behavior) of \textbf{P}, and achieve objectives introduced in section \ref{sec:intro}.
 %
 \\
 \noindent{\bf Static Analysis:\/} (section \ref{sec:static_analysis})---
@@ -12,7 +12,7 @@ The primary use of \textbf{M} is to identify locations in \textbf{P} as potentia
 %
 Yield handlers are injected before each entry in \textbf{M} to decide if the following concurrency action (\eg, message send or mutex lock) should perform or yield to other goroutines.
 %
-Such yields effectively perturb the scheduler and execute feasible but unconventional interleavings of \textbf{P}.
+Such yields effectively perturb the scheduler and execute feasible but rarely taken interleavings of \textbf{P}.
 %
 \\
 \noindent{\bf Coverage Requirements:\/} (section \ref{sec:covreq})---
@@ -20,9 +20,9 @@ Forcing the schedule perturbation is effective for exploring the feasible interl
 %
 However, a metric is required to evaluate the quality of interleaving space exploration and measure the progress until reaching a threshold.
 %
-Following the factors of effective coverage metrics, we employ \textbf{M} to emulate the possible behavior of concurrent components of \textbf{P} and define a set of \textit{coverage requirements} as indicators for quality and progress of schedule space exploration.
+Following the tenets of effective coverage metrics, we employ \textbf{M} to emulate the possible behavior of concurrent components of \textbf{P} and define a set of \textit{coverage requirements} as indicators for quality and progress of schedule space exploration.
 %
-The requirements are defined so that, during testing, a lack of requirement demands the user to fix the bug or remove the dead code.
+The requirements are defined so that, during testing, uncovered requirements demands the user to fix the bug or remove the dead code.
 \\
 \noindent{\bf Dynamic Analysis:\/} (section \ref{sec:dynamic_tracing})---
 To gain insight into the concurrent behavior of \textbf{P} and measure the covered requirements, we equipped \goat with a dynamic tracing mechanism, which is an extension to the Go standard tracer package~\cite{go-cmd-trace}.
@@ -36,7 +36,7 @@ In offline, \goat first separates the application-level events of ECT from the u
 %
 Then, it constructs a goroutine tree from application-level goroutines to check if any goroutine has leaked/blocked (\ie, did not reach its final state) after the execution termination.
 %
-Additionally, \goat maintains a global goroutine tree for \textbf{P} and equivalences goroutines from run to run to accumulate the covered requirements from each execution of \textbf{P}.
+Additionally, \goat maintains a global goroutine tree for \textbf{P} and maps goroutines from run to run to accumulate the covered requirements from each execution of \textbf{P}.
 %
 As soon as a bug is detected or the coverage exceeds a threshold, \goat stops running and produces reports for manual analysis by the user.
 %
@@ -68,8 +68,8 @@ We employ \textbf{M} entries to instrument \textbf{P} with tracing and schedule 
 First, we traverse the AST of \textbf{P} and inject three statements (\ie, AST nodes) to the beginning of \textbf{P}'s main function to enable end-to-end tracing:
 \begin{itemize}
   \item \texttt{goat\_done := goat.Start()} initializes \goat, enables tracing, and returns a channel as a conduit between application space and \goat.
-  \item \texttt{go goat.Watch(goat\_done)} spawns a new goroutine as a watchdog for the liveness of the program (in case of global deadlock or infinite loop). The watchdog goroutine either receives from \texttt{goat\_done} and sends back an ack signal or timeouts (default: 30 seconds). Then it stops tracing, flushing the trace buffer, and terminates.
-  \item \texttt{defer goat.Stop(goat\_done)} sends a value to the watcher goroutine after main returns and signals that the program is finished. Then it waits to receive the signal from the watcher, then stops tracing and terminates.
+  \item \texttt{go goat.Watch(goat\_done)} spawns a new goroutine as a watchdog for checking the liveness of the program (in case of global deadlock or infinite loop). The watchdog goroutine either receives from \texttt{goat\_done} and sends back an ack signal or timeouts (default: 30 seconds). Then it stops tracing, flushing the trace buffer, and terminates.
+  \item \texttt{defer goat.Stop(goat\_done)} sends a value to the watcher goroutine after main returns and signals that the program is finished. Then \goat waits to receive the signal from the watcher, then stops tracing and terminates.
 \end{itemize}
 
 Moreover, we inject \texttt{goat.handler()} statements before each CU in \textbf{M} to manipulate the native scheduler around concurrency primitve usages. \texttt{goat.handler()} is a function invocation that randomly calls \texttt{runtime.GoSched()} within a bound $D$ to preempt the processing core from current goroutine and push the goroutine to the back of the global queue of runnable goroutines.
@@ -83,10 +83,10 @@ Our experiments (section \ref{sec:evaluation}) demonstrate that the optimum valu
 Based on our investigations from the execution of Go applications and bug kernels, we emulate the possible behavior of concurrent components by defining a set of coverage requirements (summarized in table \ref{tab:cov_req}):
 %
 \begin{itemize}
-  \item \textbf{Req1 (Send/Recv):} \{\texttt{blocked}, \texttt{unblocking}, \texttt{NOP}\} -- Goroutine $G_1$ is either \textit{blocked} on a channel send (receive) if the receiver (sender) goroutine $G_2$ is not ready, or \textit{unblocking} the waiting receiver (sender) goroutine $G_2$. A channel send or receive might also be neither blocked nor unblocking (NOP) for buffered channels.
-  \item \textbf{Req2 (Select-Case):} \{\texttt{blocked}, \texttt{unblocking}, \texttt{NOP}\} $\times$ \{\texttt{case}$_i$\} -- cases of select statements are channel sends and recives (or default case for non-blocking selects). For all select statements that has no default case, we obtain the cases of each select statement at runtime and maintain an instance of Req1 per case.
-  \item \textbf{Req3 (Lock):} \{\texttt{blocked}, \texttt{blocking}\} -- Goroutine $G_i$ is either \textit{blocked} when locking a mutex because another goroutine has locked the mutex or \textit{blocking} other goroutines from acquiring the mutex lock.
-  \item \textbf{Req4 (Unblocking):} \{\texttt{unblocking}, \texttt{NOP}\} -- The goroutine that is performing channel close, mutex unlock, conditional variable signal and broadcast, waitGroup done, and non-blocking select case (send or receive) either \textit{unblocks} one or more blocked goroutines or has no effect (NOP).
+  \item \textbf{Req1 (Send/Recv):} \{\texttt{blocked}, \texttt{unblocking}, \texttt{NOP}\} -- Goroutine $G_1$ either is \textit{blocked} on a channel send (receive) if the receiver (sender) goroutine $G_2$ is not ready, or is \textit{unblocking} the waiting receiver (sender) goroutine $G_2$. A channel send or receive might also be neither blocked nor unblocking (NOP) for buffered channels.
+  \item \textbf{Req2 (Select-Case):} \{\texttt{blocked}, \texttt{unblocking}, \texttt{NOP}\} $\times$ \{\texttt{case}$_i$\} -- cases of select statements are channel sends and recives (or default case for non-blocking selects). For all select statements that has no default case, we obtain the cases of each select statement at runtime and maintain an instance of requirement Req1 per case.
+  \item \textbf{Req3 (Lock):} \{\texttt{blocked}, \texttt{blocking}\} -- Goroutine $G_i$ either is \textit{blocked} when locking a mutex because another goroutine has locked the mutex or is \textit{blocking} other goroutines from acquiring the mutex lock.
+  \item \textbf{Req4 (Unblocking):} \{\texttt{unblocking}, \texttt{NOP}\} -- The goroutine that is performing one of the unblocking actions such as channel close, mutex unlock, conditional variable signal and broadcast, waitGroup done, and non-blocking select case (send or receive) either \textit{unblocks} one or more blocked goroutines or has no effect (NOP).
   \item \textbf{Req5-Go:} \{\texttt{NOP}\} -- We emit a NOP action for each goroutine creation to indicate its coverage during testing.
 \end{itemize}
 
@@ -101,7 +101,7 @@ Based on our investigations from the execution of Go applications and bug kernel
 \end{table}
 
 %
-With the help of \goat's infrastructure, the proposed requirements satisfy the characteristics of an ``acceptable'' coverage metric because:
+With the help of \goat's infrastructure, our implemntation of the proposed requirements satisfy the characteristics of an ``acceptable'' coverage metric because:
 \begin{enumerate}
   \item A \textit{static model} \textbf{M} from program \textbf{P} is obtained by identifying its CU points. \textbf{M} is easy to understand by developers and reflects the concurrent behavior of \textbf{P}.
   \item The defined requirements are \textit{measurable} by analyzing the test's ECT. A global data structure maintains the covered requirements by each $t \in \mathcal{T}$.
@@ -124,7 +124,7 @@ We enrich the standard tracing mechanism with 14 additional events to enable the
 \begin{itemize}
     \item \textbf{Channel:} For each channel operation (make, send, receive, close), ECT includes an event with a unique id assigned to each channel.
     \item \textbf{(RW)Mutex, WaitGroup \& Conditional Variables:} Similar to channels, we assign a unique id to each concurrency object and emit an event for each of their operations (lock, unlock, rlock, runlock, add, wait, signal, broadcast).
-    \item \textbf{Select \& Schedule:} The scheduler and the \textit{select} structure introduce non-determinism to the execution. We keep track of the decisions made by the scheduler and select statements to obtain an accurate decision path during execution.
+    \item \textbf{Select \& Schedule:} The scheduler and the \textit{select} structure introduce non-determinism to the execution. We keep track of the decisions made by the scheduler and select statements to obtain an accurate decision path.
 \end{itemize}
 
 We call the output of enhanced tracer \textit{execution concurrency trace} (ECT).
@@ -186,11 +186,11 @@ These conditions are assessed for every captured goroutine in ECT by checking th
 %
 Nodes in the goroutine tree represent a goroutine, and directed edges denote parent-child relationships in which the child is created from a \texttt{go} statement that the parent executes.
 %
-Each node of the tree contains the entire sequence of events that the goroutine executed~\footnote{The sequence of events per node is not shown in figure \ref{fig:gtree} for simplicity.}, information about the goroutine's creation site, the resources it holds at each execution point, and the final executed event right before the program termination.
+Each node of the tree contains the entire sequence of events that the goroutine executed, information about the goroutine's creation site, the resources it holds at each execution point, and the final executed event right before the program termination.
 %
 \goat analyzes this collection of information to check whether any goroutine leaked after termination and whether the coverage requirements are covered.
 
-\subsubsection{Leak Detection}
+\subsubsection{Deadlock Detection}
 When tracing is enabled, every application goroutine invokes the tracer to capture $GoEnd$ before finishing its execution.
 %
 Before the main function returns, the main goroutine hands over the control to the root goroutine to finalize the program termination.
@@ -210,7 +210,7 @@ In \goat, the main goroutine's final event in a successful execution is $GoSched
 
 We call an execution \textbf{successful}, if below conditions hold:
 \begin{enumerate}
-  \item all goroutines spawned in the main goroutine has $GoEnd$ as their final event
+  \item all goroutines spawned in the main goroutine has $GoEnd$ as their final event,
   \item the final event of the main goroutine is $GoSched$ with \texttt{runtime.traceStop} on top of its stack.
 \end{enumerate}
 
@@ -262,7 +262,7 @@ Samples of such reports and visualizations are available in \cite{iiswc_goat_vis
 
 
 \subsubsection{Coverage Measurement}
-Once the program execution terminates, \goat checks whether the extracted coverage requirements are covered during execution.
+Once the execution terminates, \goat checks whether the extracted coverage requirements are covered.
 %
 A mapping between ECT dynamic concurrent events and statically obtained CU points is emitted by matching their respective call-stack and CU source location.
 %
@@ -270,13 +270,11 @@ Through a BFS traversal of the goroutine tree, we add a \textit{coverage vector}
 %
 Each element of the coverage vector is the respective covered value of the coverage requirement for the current goroutine node.
 %
-During executions of tests $t \in \mathcal{T}$, we maintain and update a global goroutine tree after each $t$.
-%
-It is crucial to maintain a global goroutine tree to measure the progress of coverage percentage over tests in $\mathcal{T}$.
+During executions of tests $t \in \mathcal{T}$, we maintain and update a global goroutine tree after each $t$ to measure the progress of coverage percentage over tests in $\mathcal{T}$.
 %
 However, equivalencing between two goroutines and their respective coverage vectors from different executions is non-trivial.
 %
-We say two goroutines $G_m$ and $G_n$ in the tests $t_i$ and $t_j$ are \textit{equivalent} (\ie falls into a identical node in the global goroutine tree) if their parents are equivalent and their creation source location (CU of kind \texttt{go}) are identical.
+We say two goroutines $G_m$ and $G_n$ in the tests $t_i$ and $t_j$ are \textit{equivalent} (\ie, falls into a identical node in the global goroutine tree) if their parents are equivalent and their creation source location (CU of kind \texttt{go}) are identical.
 %
 \begin{equation}
   G_m~\equiv~G_n~~\text{if}

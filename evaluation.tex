@@ -1,6 +1,6 @@
 \begin{figure}
 \centering
-  \includegraphics[width=.95\linewidth]{figs/P4_detections.pdf}
+  \includegraphics[width=.85\linewidth]{figs/P4_detections.pdf}
   \caption{Histogram of detected bugs by each tool performed on 68 GoKer blocking bugs. PDL: partial deadlock, GDL/TO: global deadlock, Crash/Halt: causes the program to crash or halt during detection.}
   \label{fig:detection}
 \end{figure}
@@ -8,7 +8,7 @@
 
 \begin{figure}
 \centering
-  \includegraphics[width=.95\linewidth]{figs/P4_runs2.pdf}
+  \includegraphics[width=.85\linewidth]{figs/P4_runs2.pdf}
   \caption{Percentage distribution for the average required number of iterations (falling into each of the four given intervals) by each tool to detect 68 GoKer blocking bugs.}
   \label{fig:runs}
 \end{figure}
@@ -57,7 +57,7 @@ We have compared \goat against three existing dynamic detectors:
        \caption{\texttt{kuberenetes11298}}
        \label{fig:kubernetes_coverage}
      \end{subfigure}
-        \caption{Coverage percentage after each iteration of \goat with various $D$ values for two representative bugs~\cite{yuan-gobench-cgo21}. Iterations on the Y axis of figures end when the respective bug is first detected. For example, \goat($D2$) detects the bug in \texttt{kuberenetes11298} after 38 executions at 52.23\% coverage percentage.}
+        \caption{Coverage percentage after each iteration of \goat with various $D$ values for two representative bugs. Iterations on the X axis of figures end when the respective bug is first detected. E.g., \goat($D2$) detects the bug in \texttt{kuberenetes11298} after 38 executions at 52.23\% coverage percentage.}
         \label{fig:coverage}
 \end{figure*}
 
@@ -74,6 +74,8 @@ Table \ref{tab:comparison} shows the details of results obtained from 1000 execu
 %
 Figure \ref{fig:detection} and table \ref{tab:comparison} show that variations of \goat outperforms other detector by discovering the bug in 100\% of the GoKer blocking benchmark.
 %
+For example, the bug \texttt{kubernetes\_6632} that is caused by misuse of channels and locks, only detected by \goat after a couple of executions, while other tools were unable to detect it after 1000 executions.
+%
 Figure \ref{fig:runs} and highlighted cells of table \ref{tab:comparison} show that the idea of injecting random delays around concurrency usage points in the program drastically reduces the required number of testing iterations until the bug occurs.
 %
 $D0$ means \goat did not delay the program at any point and $D4$ means that the target program has been delayed up to four times around its CU points.
@@ -86,9 +88,9 @@ For example, the row of bug \texttt{serving\_2137} in table \ref{tab:comparison}
 
 
 \subsection{Coverage Analyis}
-We picked two representative bug kernels \texttt{etcd7443} and \texttt{kubernetes11298} to evaluate the coverage idea on them as they both have extensive use of channels, mutexes, conditional variables, nested selects within nested for loops, and the buggy interleaving is proved to be rare to happen.
+We picked two representative bug kernels \texttt{etcd7443} and \texttt{kubernetes11298} to evaluate the coverage idea as they both have extensive use of channels, mutexes, conditional variables, nested selects within nested for loops, and the buggy interleaving is proved to be rare to happen.
 %
-figures \ref{fig:etcd_coverage} and \ref{fig:kubernetes_coverage} show the gradual increase in coverage percentage during testing iterations for different values of $D$.
+Figures \ref{fig:etcd_coverage} and \ref{fig:kubernetes_coverage} show the gradual increase in coverage percentage during testing iterations for different values of $D$.
 %
 Recall that $D$ is the bound on the number of yields that we inject to the native execution of a given program to perturb the scheduler around concurrency usages.
 %

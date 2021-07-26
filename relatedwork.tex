@@ -1,4 +1,4 @@
-For correctness of CSP-based concurrent languages like Go, Ng and Yoshida \cite{ng-dl-cc16} first proposed a static tool to detect global deadlock in Go programs using choreography synthesis.
+For correctness of CSP-based concurrent languages like Go, Ng and Yoshida \cite{ng-dl-cc16} proposed a static tool to detect global deadlock in Go programs using choreography synthesis.
 %
 Later, Stadtmuller et al. \cite{stadtmuller-minigo-aplas16} proposed a static trace-based global detection approach based on forkable regular expressions.
 %
@@ -6,15 +6,15 @@ Lange et al. proposed more static verification frameworks for checking channel s
 %
 Both methods approximate Go programs with session types and behavioral contracts extracted from their SSA intermediate representation.
 %
-The mentioned work has some limitations for handling dynamic (e.g., in-loop) goroutine or channel creation, and programs with many goroutines. Besides, the rate of generated false positives is high.
+The mentioned work has limitations for handling dynamic (e.g., in-loop) goroutine or channel creation, and programs with many goroutines. Besides, the rate of generated false positives is high.
 %
-As dynamic (runtime-level) analysis approaches, Zhao et al. \cite{zhao-occam97} introduced a runtime monitoring approach for deadlock detection for Occam programs based on wait-for graphs and some heuristics.
+As dynamic (runtime-level) analysis approaches, Zhao et al. \cite{zhao-occam97} introduced a heuristic-based runtime monitoring approach for deadlock detection in Occam programs.
 %
 Sulzmann and Stadtmuller proposed a dynamic verification approach for synchronous (unbuffered) channels \cite{sulzmann-corr17}, and a vector-clock-based approach for asynchronous channels \cite{sulzmann-twophase-2018}.
 %
-Although they may support a larger subset of the Go language, they only focus on channels as the root cause of deadlocks and evaluated only on relatively small examples.
+Although they may support a larger subset of the Go language, they only focus on channels as the root cause of deadlocks and evaluated on relatively small examples.
 %
-Also, they usually do not scale for real-world Go applications with thousands of goroutines and LOC \cite{dilley-empirical-saner19}.
+Also, they usually do not scale for applications with thousands of goroutines and LOC \cite{dilley-empirical-saner19}.
 
 %
 Researchers have applied different systematic testing methods \cite{thomson-concurrencyTesting-ppopp14} to reduce the interleaving space to explore effectively and efficiently.

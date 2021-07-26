@@ -9,7 +9,7 @@ Go introduces a new concurrency model, mixing shared-memory features of language
 %
 The language is equipped with a rich vocabulary of \textit{serialization} features to facilitate the memory model constraints~\cite{go-memModel}; they include synchronous and asynchronous communication, memory protection, and barriers for efficient synchronization:
 \begin{itemize}
-    \item \textbf{Goroutines} are functions that execute concurrently on logical processors.
+    \item \textbf{Goroutines} are functions that execute concurrently on logical processors having their own stacks.
     \item \textbf{Channels} are typed conduits through which goroutines communicate.  Channels are unbuffered by default, providing synchronous (rendezvous) or asynchronous (via buffered channels) messaging between goroutines.
     \item \textbf{Synchronization} features such as \textit{(RW)mutex}, \textit{waitGroup}, \textit{conditional variables}, and \textit{select} are included in the language to provide more and flexible synchronization, data access serialization, and memory protection.
     \item \textbf{Scheduler} maintains goroutines in FIFO queues and binds them on OS threads to execute on processing cores.
@@ -55,7 +55,7 @@ In other words, the runtime throws a deadlock exception when the \texttt{main} g
 %
 Since there is no blocking instruction in the \texttt{main} goroutine in listing \ref{listing:moby28462.minipage}, the program terminates successfully regardless of other goroutines' statuses.
 %
-However, this program suffers from a common bug in concurrent Go where one or more goroutines \textit{leak} (\ie, \textit{partial deadlock}) from the execution (\ie, never reach their end states).
+However, this program suffers from a common bug in concurrent Go where one or more goroutines \textit{leak}(\ie, \textit{partial deadlock}) from the execution (\ie, never reach their end states).
 
 %\stcmtside{Explain the deadlock (leak) situation that might get overlooked}
 %Due to the non-determinism introduced by the runtime scheduler and application-level random features like \texttt{select}, many interleavings are feasible for concurrent execution of simple programs such as listing \ref{listing:moby28462.minipage}.
@@ -82,7 +82,7 @@ The circular wait between the container mutex and channel prevents both spawned 
 \label{sec:goBugs}
 Based on a proposed bug taxonomy for Go \cite{tu-concurrentBugs-asplos19}, bugs are categorized separately based on their \textit{causes} (shared-memory vs. message-passing) and \textit{symptoms} (blocking vs. non-blocking).
 %
-Blocking bugs historically refer to situations where one or more processing units (\eg, goroutines) are blocked, waiting for an external signal to resume (\eg, leak situation in listing \ref{listing:moby28462.minipage}.
+Blocking bugs historically refer to situations where one or more processing units (\eg, goroutines) are blocked, waiting for an external signal to resume (\eg, leak situation in listing \ref{listing:moby28462.minipage}).
 %
 The observed causes of such blocking flaws in the context of Go are as follows:
 
@@ -94,7 +94,7 @@ The observed causes of such blocking flaws in the context of Go are as follows:
 
 Similar to other concurrent languages, Go has non-blocking bugs such as data races and atomicity violations while introducing new bug idioms due to its new concepts such as anonymous functions \cite{tu-concurrentBugs-asplos19}.
 %
-This work focuses on blocking bugs (i.e., partial and global deadlocks).
+This work focuses on blocking bugs\footnote{Throughout this work, leaks (partial deadlocks) and global deadlocks are interchangeably referred as \textit{deadlocks}  as a general term for blocking bugs.}.
 
 %\stcmt{below: Application-level non-determinism makes debugging more difficult}
 %\noindent{\bf Application-level non-determinism:\/}
@@ -158,11 +158,11 @@ The \textit{coverage percentage} of a test $\mathcal{T}$ is the ratio of the req
 
 In the context of concurrent software testing, coverage metrics are proposed to quantify the quality of search space exploration.
 %
-\textit{Synchronization} coverage metrics such as \textit{blocking-blocked} \cite{edelstein2003contest}, \textit{blocked-pair-follows} \cite{trainin-followsCoverage-padtad09} and \textit{synchronization-pair} \cite{hong-syncTesting-issta12} defined requirements to cover during testing for exposing blocking bugs (\eg deadlocks).
+\textit{Synchronization} coverage metrics such as \textit{blocking-blocked} \cite{edelstein2003contest}, \textit{blocked-pair-follows} \cite{trainin-followsCoverage-padtad09} and \textit{synchronization-pair} \cite{hong-syncTesting-issta12} defined requirements to cover during testing for exposing blocking bugs (\eg, deadlocks).
 %
 %\textit{Memory access} coverage metrics such as PSet \cite{yu-pser-isca09} and def-use \cite{yang-defuse-issta98} focuses on data-access related bugs such as atomicity violation or data races.
 %
-For example, the synchronization coverage model in \cite{edelstein2003contest} defines \textit{blocking} and \textit{blocked} requirements per each synchronized block (\ie mutually exclusive section of the code that is protected by a lock).
+For example, the synchronization coverage model in \cite{edelstein2003contest} defines \textit{blocking} and \textit{blocked} requirements per each synchronized block (\ie, mutually exclusive section of the code that is protected by a lock).
 %
 The purpose of this requirement is to check if a test can report when there is a lock contention for two or more threads entering the synchronized block.
 %
