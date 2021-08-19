@@ -1,0 +1,231 @@
+
+Submitted
+
+[PDF] Submission (822kB) 16 Jul 2021 9:33:14pm EDT ·  c1e70b06
+
+Abstract
+The use of increasing levels of parallelism and concurrency in the system design---especially in a feature-rich language such as Go---demands effective concurrency debugging techniques that are easy to deploy in practice. We present GoAT, a combined static and dynamic concurrency testing and analysis tool that facilitates the process of debugging for real-world programs. Key ideas in GoAT include 1) automated dynamic tracing to capture the behavior of concurrency primitives, 2) systematic schedule space exploration to accelerate the bug occurrence and 3) deadlock detection with supplementary visualizations and reports. We also propose a set of coverage requirements that characterize the dynamic behavior of concurrency primitives and provide metrics to measure the quality of tests. Evaluation of GoAT on 68 curated real-world bug scenarios demonstrates that GoAT is significantly effective in detecting rare bugs, and its schedule perturbation method based on schedule yielding detects these bugs with less than three yields. These results together with the ease of deploying GoAT on real-world Go programs hold significant promise in the field-debugging of Go programs.
+
+[more]
+Authors (blind)
+S. Taheri, G. Gopalakrishnan [details]
+✓ Tool/Benchmark Paper
+Artifact Evaluation
+Likely
+Topics
+RevExp	RevCon	Nov	WriQua	ExpMet	OveMer
+Review #7A		1	1	3	3	4	4
+Review #7B		2	3	3	4	4	4
+Review #7C		3	2	2	2	3	2
+Review #7D		3	2	3	4	5	5
+You are an author of this submission.
+
+[Edit] Edit submission[Add response] Add response
+
+[Text] Reviews in plain text
+
+Review #7A
+Reviewer expertise
+1. 
+No familiarity
+
+Reviewer confidence
+1. 
+Low
+
+Novelty
+3. 
+New contribution
+
+Writing quality
+3. 
+Adequate
+
+Experimental methodology
+4. 
+Good
+
+Overall merit
+4. 
+Accept
+
+Paper summary
+The authors introduce the Go Analysis and Testing (GoAT) framework, which provides a debugging framework for concurrent Go applications. The authors show that it is able to detect all of the bugs present in the GoKer benchmark. To decrease the time to isolate these bugs, GoAT injects random delays into the scheduler.
+
+Strengths
++ Significantly improves on the built-in detector and LockDL
++ GoAT decreases the time to identify bugs by injecting delays into the scheduler
+
+Weaknesses
+- No discussion of time to solution or overheads
+
+Questions for authors’ response
+How large is a typical ECT?
+
+Does the ECT include message/thread interleaving? Is there an ECT per-process? Per-thread?
+
+Why didn't you include GoReal in the evaluation?
+
+How long does it take to replay an ECT for bug detection?
+
+Comments for author
+This appears to be a very useful tool for bug detection in Go and out-performs the current built-in tools. I would like to have seen some discussion about time-to-solution and the overhead of storing the execution concurrency trace. I also think that it would be helpful to show a snippet from a trace to provide readers some context in the discussion.
+
+The taxonomy is derived from [8], has this been widely accepted in the Go community? Did you come across any bugs that do not fit these categories?
+
+Editorial
+SecI    - LOC is not defined
+SecIIC  - and examining the program's
+SecIID  - The converge metric
+SecIID  - testing executions should be ital
+SecIIIC - sends and receives
+SecIIIC - statements that have no default
+SecIIIE - new goroutines or picks from
+SecIVA  - in table IV shows that only GoAT D2 was able SecIVB - etcd and kubernetes should have underscores between the chars and digits
+
+Review #7B
+Reviewer expertise
+2. 
+Some familiarity
+
+Reviewer confidence
+3. 
+High
+
+Novelty
+3. 
+New contribution
+
+Writing quality
+4. 
+Well-written
+
+Experimental methodology
+4. 
+Good
+
+Overall merit
+4. 
+Accept
+
+Paper summary
+This paper presents GoAT, a tool for uncovering concurrency bugs in Go. This is really a testing tool that instruments concurrent programs with state tracing (e.g. blocked, unblocked) and calls to perturb goroutine schedules. They compare against 3 existing (and somewhat limited) tools for detecting concurrency bugs in Go. In their evaluation, they can detect all the bugs identified in a recent Go concurrency bug suite.
+
+Strengths
++ The tool appears to do what is advertised: detect blocking bugs in Go.
++ The writing and methodology are strong.
++ The evaluation looks at 3 other existing tools, and demonstrates the advantages of GoAT.
+
+Weaknesses
++ Could use some a few more insights into concurrency bugs in Go that hasn't already been published.
+
+Questions for authors’ response
+When you say that the ECT is totally ordered, what exactly do you mean? I would imagine that the program execution running under GoAT is not somehow made sequentially consistent. So I would imagine what you mean is that the ECT output is totally ordered with respect to the global clock you mention. That's fine, but I'm not sure I would describe that as totally ordered because it doesn't necessarily mean anything with respect to the program order. Can you clarify?
+
+Can you fix the link to your supporting materials repository? I would like to see the sample visualizations. Also, maybe a little discussion on how you generate the visualizations is warranted. That fact seemingly pops up out of nowhere at the end of the paper.
+
+Can you explain what is going on in the serving_2137 bug and why it is so tricky to catch? If you don't know yet, that is fine. But I think it would strengthen your paper to have a few details like this on particular bugs.
+
+Comments for author
+For the watchdog aspect to GoAT, I'm a little unclear how this works. It seems like you need the program execution time a priori? I say this because you mentioned a 30s default timer. If so, I think this aspect of your system could be strengthened.
+
+When you are perturbing your schedule, why did you choose the goroutine scheduler (runtime.GoSched())? It seems like if your goroutine is still in a runnable state when you invoke that, it will just place it back in the run queue and perhaps begin execution again immediately. Have you considered a timed sleep (in us) instead to perturb the schedule further?
+
+You should definitely run your paper through ispell. There are several misspellings  and typos.
+
+Review #7C
+Reviewer expertise
+3. 
+Knowledgeable
+
+Reviewer confidence
+2. 
+Medium
+
+Novelty
+2. 
+Incremental improvement
+
+Writing quality
+2. 
+Needs improvement
+
+Experimental methodology
+3. 
+Average
+
+Overall merit
+2. 
+Weak reject
+
+Paper summary
+This paper presents GoAT, which is a concurrency testing and analysis tool for programs written in Go. GoAT combines static and dynamic techniques to facilitate the debugging process of Go programs. There are three key components in GoAT: 1) a dynamic tracer to capture the behavior of concurrency primitives, 2) a scheduler to explore the schedule space for accelerating the bug occurrence, and 3) a deadlock detector with supplementary visualizations and reports. The paper also evaluates GoAT on 68 bug scenarios to show the effectiveness of GoAT. The results show that GoAT is able to detect these bugs with less than three yields.
+
+Strengths
++ Targeting a practical and difficult problem
+
++ A potentially useful testing and analysis framework for Go programs
+
+Weaknesses
+- Technical contribution is incremental
+
+- Some technical details are not clear
+
+Questions for authors’ response
+What is the most significant technical contribution of GoAT, given that there is plenty of research work on concurrency testing and debugging, even though they may not focus on Go programs?
+
+Comments for author
+I think this paper does a good job of implementing a debugging and testing tool to facilitate the debugging process of Go programs. Such a tool is highly needed and useful given the popularity of Go. However, my major concern about this paper is its technical contribution. After reading this paper, it feels that GoAT is mainly a combination of engineering efforts. It is not clear to me what is the technical contribution of GoAT, compared to previous research work on concurrency debugging and testing. Also, what is the fundamental difference between testing and debugging a Go program and a traditional multithreaded program written, for example, in C? This is also the question for which I want to find an answer from the paper.
+
+Does GoAT provide any guarantee that a concurrency bug, e.g., deadlock, in a Go program can always be exposed using the simple yield approach described in the paper? Also, can a Go program has user-defined synchronizations? If yes, how does GoAT identify such synchronizations?
+
+Section I mentions that GoBench contains both real concurrency bugs (GoReal) and simplified bug kernels (GoKer). But, the paper only evaluates GoAT on GoKer. I’m wondering what is the reason that GoAT is not evaluated with GoReal. In my opinion, it would be more helpful to demonstrate the practicability of GoAT if it can be used to analyze and test concurrency bugs in real applications.
+
+After reading the paper, I still don’t get the concrete idea of coverage used in GoAT. Take Figure 6 as an example. What does 100% coverage mean in the two figures? Section III-C describes coverage requirements. However, it does not provide any formal definition of coverage. Also, how are these requirements used to quantitatively measure the coverage? 
+
+How is the performance overhead of GoAT? Since GoAT needs to instruments the program to collect profiling information and inject yields to expose concurrency bugs, it would be helpful if the paper can provide a performance comparison of GoAT with original execution.
+
+Though this paper mainly focuses on deadlock bugs, it would be appreciated if the paper briefly discusses how GoAT can be used to test and analyze non-dead-lock bugs, since it is claimed as a “concurrency analysis and debugging tool” for Go programs.
+
+The writing of the paper can be improved, as I saw several typos and grammar errors.
+
+Review #7D19 Aug 2021
+Reviewer expertise
+3. 
+Knowledgeable
+
+Reviewer confidence
+2. 
+Medium
+
+Novelty
+3. 
+New contribution
+
+Writing quality
+4. 
+Well-written
+
+Experimental methodology
+5. 
+Excellent
+
+Overall merit
+5. 
+Strong accept
+
+Paper summary
+This paper describes a tool for analyzing and debugging concurrency bugs in the Go programming language. Due to the extensive support for concurrent execution in Go, the value of concurrency debugging tools are very high. This paper offers a systematic approach to identifying concurrency issues, including building a model using static analysis and source code instrumentation, generating dynamic execution traces, identifying a set of coverage requirements to describe the surface area of bugs uncovered and accelerating the findings thereof and then detecting bugs. The techniques are shown to be useful on real world concurrency bugs.
+
+Strengths
+- The paper is well written and describes the context and contributions of the work quite well.
+- The implementation is usable on real world applications and is shown to be effective in finding real-world known bugs.
+
+Weaknesses
+- Not exactly a weakness, I would have liked a discussion of the techniques and their applicability outside of Go.
+
+Comments for author
+I really enjoyed reading the paper. The descriptions and analyses are great and the production-readiness of the tool implies that this would be a valuable contribution to the Go community.
+
+Add response
+
