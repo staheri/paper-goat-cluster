@@ -124,7 +124,7 @@ Figure \ref{fig:rare_bugs} displays the histogram of 68 blocking bug kernels gro
 %
 Approximately 30\% of bugs required more than one execution to happen and be detected by \goat\footnote{The figure and numbers are obtained from trials of \goat on native execution of bug kernels without any randomization (\ie, $D=0$).}.
 %
-\textit{Stress testing} is a common way to detect such rare bugs by exercising the scheduler and examine the program's behavior in many executions.
+\textit{Stress testing} is a common way to detect such rare bugs by exercising the scheduler and examining the program's behavior in many executions.
 %
 However, such testing is inefficient because some interleavings might get tested repeatedly while other feasible interleavings remain untested.
 %
@@ -146,11 +146,11 @@ Results in section \ref{sec:evaluation} show that such simple yields are effecti
 \label{sec:coverage}
 To demonstrate that testing has been thorough, \textit{coverage metrics} are defined to measure the progress of tests and specify testing termination conditions.
 %
-Coverage metric for the set of testing executions $\mathcal{T}$ is a set of \textit{requirements} $\mathcal{R}$ that should get covered during testing iterations.
+The coverage metric for the set of \textit{testing executions} $\mathcal{T}$ is a set of \textit{requirements} $\mathcal{R}$ that should get covered during testing iterations.
 %
 We say requirement $R_i \in \mathcal{R}$ is covered during testing iteration $t_j \in \mathcal{T}$ if we can correlate an \textit{action} during execution of $t_j$ to $R_i$.
 %
-For example, in \textit{statement coverage}, which is a widely-used metric in testing sequential software, $R$ is the set of source locations (file and line numbers) in the target program.
+For example, in \textit{statement coverage}, which is a widely used metric in testing sequential software, $R$ is the set of source locations (file and line numbers) in the target program.
 %
 $R_i$ is covered by test execution $t$ if the statement at location $R_i$ is executed in $t$.
 %

@@ -22,7 +22,7 @@ However, a metric is required to evaluate the quality of interleaving space expl
 %
 Following the tenets of effective coverage metrics, we employ \textbf{M} to emulate the possible behavior of concurrent components of \textbf{P} and define a set of \textit{coverage requirements} as indicators for quality and progress of schedule space exploration.
 %
-The requirements are defined so that, during testing, uncovered requirements demands the user to fix the bug or remove the dead code.
+The requirements are defined so that, during testing, uncovered requirements demand the user to fix the bug or remove the dead code.
 \\
 \noindent{\bf Dynamic Analysis:\/} (section \ref{sec:dynamic_tracing})---
 To gain insight into the concurrent behavior of \textbf{P} and measure the covered requirements, we equipped \goat with a dynamic tracing mechanism, which is an extension to the Go standard tracer package~\cite{go-cmd-trace}.
@@ -72,7 +72,7 @@ First, we traverse the AST of \textbf{P} and inject three statements (\ie, AST n
   \item \texttt{defer goat.Stop(goat\_done)} sends a value to the watcher goroutine after main returns and signals that the program is finished. Then \goat waits to receive the signal from the watcher, then stops tracing and terminates.
 \end{itemize}
 
-Moreover, we inject \texttt{goat.handler()} statements before each CU in \textbf{M} to manipulate the native scheduler around concurrency primitve usages. \texttt{goat.handler()} is a function invocation that randomly calls \texttt{runtime.GoSched()} within a bound $D$ to preempt the processing core from current goroutine and push the goroutine to the back of the global queue of runnable goroutines.
+Moreover, we inject \texttt{goat.handler()} statements before each CU in \textbf{M} to manipulate the native scheduler around concurrency primitive usages. \texttt{goat.handler()} is a function invocation that randomly calls \texttt{runtime.GoSched()} within a bound $D$ to preempt the processing core from current goroutine and push the goroutine to the back of the global queue of runnable goroutines.
 %
 When $D=0$, \goat does not perturb the scheduler and lets \textbf{P} to execute natively. For any $D>0$, \goat manipulates application-level goroutines from their regular execution D times.
 %
@@ -84,7 +84,7 @@ Based on our investigations from the execution of Go applications and bug kernel
 %
 \begin{itemize}
   \item \textbf{Req1 (Send/Recv):} \{\texttt{blocked}, \texttt{unblocking}, \texttt{NOP}\} -- Goroutine $G_1$ either is \textit{blocked} on a channel send (receive) if the receiver (sender) goroutine $G_2$ is not ready, or is \textit{unblocking} the waiting receiver (sender) goroutine $G_2$. A channel send or receive might also be neither blocked nor unblocking (NOP) for buffered channels.
-  \item \textbf{Req2 (Select-Case):} \{\texttt{blocked}, \texttt{unblocking}, \texttt{NOP}\} $\times$ \{\texttt{case}$_i$\} -- cases of select statements are channel sends and recives (or default case for non-blocking selects). For all select statements that has no default case, we obtain the cases of each select statement at runtime and maintain an instance of requirement Req1 per case.
+  \item \textbf{Req2 (Select-Case):} \{\texttt{blocked}, \texttt{unblocking}, \texttt{NOP}\} $\times$ \{\texttt{case}$_i$\} -- cases of select statements are channel sends and recives (or default case for non-blocking selects). For all select statements that have no default case, we obtain the cases of each select statement at runtime and maintain an instance of requirement Req1 per case.
   \item \textbf{Req3 (Lock):} \{\texttt{blocked}, \texttt{blocking}\} -- Goroutine $G_i$ either is \textit{blocked} when locking a mutex because another goroutine has locked the mutex or is \textit{blocking} other goroutines from acquiring the mutex lock.
   \item \textbf{Req4 (Unblocking):} \{\texttt{unblocking}, \texttt{NOP}\} -- The goroutine that is performing one of the unblocking actions such as channel close, mutex unlock, conditional variable signal and broadcast, waitGroup done, and non-blocking select case (send or receive) either \textit{unblocks} one or more blocked goroutines or has no effect (NOP).
   \item \textbf{Req5-Go:} \{\texttt{NOP}\} -- We emit a NOP action for each goroutine creation to indicate its coverage during testing.
@@ -101,7 +101,7 @@ Based on our investigations from the execution of Go applications and bug kernel
 \end{table}
 
 %
-With the help of \goat's infrastructure, our implemntation of the proposed requirements satisfy the characteristics of an ``acceptable'' coverage metric because:
+With the help of \goat's infrastructure, our implementation of the proposed requirements satisfy the characteristics of an ``acceptable'' coverage metric because:
 \begin{enumerate}
   \item A \textit{static model} \textbf{M} from program \textbf{P} is obtained by identifying its CU points. \textbf{M} is easy to understand by developers and reflects the concurrent behavior of \textbf{P}.
   \item The defined requirements are \textit{measurable} by analyzing the test's ECT. A global data structure maintains the covered requirements by each $t \in \mathcal{T}$.
@@ -113,7 +113,7 @@ With the help of \goat's infrastructure, our implemntation of the proposed requi
 \label{sec:dynamic_tracing}
 The standard execution tracer package \cite{go-package-trace,go-cmd-trace} provides dynamic tracing for the construction of execution models from the interactions of processors, OS threads, goroutines, the scheduler, and the garbage collection mechanism.
 %
-The tracing mechanism is compiled into all programs always through the runtime and is enabled on demand to study \textit{perfromance bottlenecks} through visualizers like \textit{pprof} \cite{go-profile-blog}.
+The tracing mechanism is compiled into all programs always through the runtime and is enabled on demand to study \textit{performance bottlenecks} through visualizers like \textit{pprof} \cite{go-profile-blog}.
 %
 The alphabet of trace events is total of 49 events \cite{goParserSource}, categorized and summarized in table \ref{tab:events}.
 %
@@ -168,7 +168,7 @@ The enhanced dynamic tracing also enables the measurement of coverage requiremen
 
 \subsection{Offline Analysis}
 \label{sec:offline_analysis}
-In the lifetime of Go programs' executions, the runtime system creates new goroutines or pick from the pool of dead goroutines to perform various tasks such as bootstrapping the program, garbage marking and sweeping, and tracing.
+In the lifetime of Go programs' executions, the runtime system creates new goroutines or picks from the pool of dead goroutines to perform various tasks such as bootstrapping the program, garbage marking and sweeping, and tracing.
 %
 \goat also adds an extra goroutine to \textit{watch} the program execution in case of the main goroutine blockage.
 %
@@ -287,7 +287,7 @@ We say two goroutines $G_m$ and $G_n$ in the tests $t_i$ and $t_j$ are \textit{e
 
 
 \begin{table*}[]
-\caption{Output of each tool on GoKer \cite{yuan-gobench-cgo21} blocking bugs. Detected bug (minimum \# of executions required) -- \textbf{X (1000)}: the tool is not able to detect any bug after 1000 executions. \textbf{PDL}: Partial Deadlock, \textbf{GDL}: Global Deadlock, \textbf{PDL-k}: Partial Deadlock with \textit{k} number of goroutines leaked. \textbf{DL}: A warning for potential deadlock is issued. \textbf{TO/GDL}: The global deadlock is detected because none of goroutines made any progress after 30 seconds, \textbf{CRASH}: The execution paniced because of a flaw in the execution (e.g., send on closed channel panic), \textbf{HANG}: The tool halt for more than 10 minutes.}
+\caption{Output of each tool on GoKer \cite{yuan-gobench-cgo21} blocking bugs. Detected bug (minimum \# of executions required) -- \textbf{X (1000)}: the tool is not able to detect any bug after 1000 executions. \textbf{PDL}: Partial Deadlock, \textbf{GDL}: Global Deadlock, \textbf{PDL-k}: Partial Deadlock with \textit{k} number of goroutines leaked. \textbf{DL}: A warning for potential deadlock is issued. \textbf{TO/GDL}: The global deadlock is detected because none of goroutines made any progress after 30 seconds, \textbf{CRASH}: The execution panicked because of a flaw in the execution (e.g., send on closed channel panic), \textbf{HANG}: The tool halt for more than 10 minutes.}
 \centering
 \scalebox{0.72}{
     \input{tabs/comparison}

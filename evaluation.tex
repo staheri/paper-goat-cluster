@@ -72,7 +72,7 @@ Table \ref{tab:comparison} shows the details of results obtained from 1000 execu
 
 
 %
-Figure \ref{fig:detection} and table \ref{tab:comparison} show that variations of \goat outperforms other detector by discovering the bug in 100\% of the GoKer blocking benchmark.
+Figure \ref{fig:detection} and table \ref{tab:comparison} show that variations of \goat outperform other detector by discovering the bug in 100\% of the GoKer blocking benchmark.
 %
 For example, the bug \texttt{kubernetes\_6632} that is caused by misuse of channels and locks, only detected by \goat after a couple of executions, while other tools were unable to detect it after 1000 executions.
 %
@@ -82,13 +82,13 @@ $D0$ means \goat did not delay the program at any point and $D4$ means that the 
 %
 Figures \ref{fig:detection} and \ref{fig:runs} also state that the increase in the delay bound of \goat does not necessarily increase the chance of exposing the bug.
 %
-For example, the row of bug \texttt{serving\_2137} in table \ref{tab:comparison} show that only \goat $D2$ were able to detect the bug.
+For example, the row of bug \texttt{serving\_2137} in table \ref{tab:comparison} shows that only \goat $D2$ were able to detect the bug.
 
 
 
 
-\subsection{Coverage Analyis}
-We picked two representative bug kernels \texttt{etcd7443} and \texttt{kubernetes11298} to evaluate the coverage idea as they both have extensive use of channels, mutexes, conditional variables, nested selects within nested for loops, and the buggy interleaving is proved to be rare to happen.
+\subsection{Coverage Analysis}
+We picked two representative bug kernels \texttt{etcd\_7443} and \texttt{kubernetes\_11298} to evaluate the coverage idea as they both have extensive use of channels, mutexes, conditional variables, nested selects within nested for loops, and the buggy interleaving is proved to be rare to happen.
 %
 Figures \ref{fig:etcd_coverage} and \ref{fig:kubernetes_coverage} show the gradual increase in coverage percentage during testing iterations for different values of $D$.
 %
