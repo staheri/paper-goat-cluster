@@ -3,7 +3,16 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \subsection{Abstract}
 
-{\em Obligatory}
+\goat is a framework that takes that
+collects traces
+study them
+debug and visualize
+measure coverage
+
+All of above are done through goatlib and tuning parameters such as global deadlock timeout, visualization grain, number of runtime processes, etc.
+
+\goat and its bootstrapping script is available at https://github.com/staheri/goat
+We are working on a docker version of goat to make it available for schedule testing through test packages.
 
 \subsection{Artifact check-list (meta-information)}
 
@@ -13,17 +22,14 @@ unify artifact meta information in Digital Libraries.}
 
 {\small
 \begin{itemize}
-  \item {\bf Algorithm: }
-  \item {\bf Program: }
-  \item {\bf Compilation: }
-  \item {\bf Transformations: }
-  \item {\bf Binary: }
-  \item {\bf Model: }
-  \item {\bf Data set: }
-  \item {\bf Run-time environment: }
-  \item {\bf Hardware: }
-  \item {\bf Run-time state: }
-  \item {\bf Execution: }
+  \item {\bf Algorithm: }Dynamic tracing, testing coverage, schedule exploration, debugging, visualization, and software analysis.
+  \item {\bf Program: } Automated source instrumentation that utilize a custom Go runtime to collect traces containing concurrent events. Traces are automatically analyzed to bring insight into the program's behavior, detect deadlocks, and measure concurrent coverage metrics.
+  \item {\bf Compilation: } goatlib is the main package that is used in \goat and also usable for Go developers.
+  \item {\bf Transformations: } Automatically instrument target source codes with \goat trace handlers.
+  \item {\bf Data set: } We used GoBench \cite{yuan-gobench-cgo21} concurrency bugs to evaluate \goat. The data produced by \goat for deadlock detection, visualization and coverage measurement are available in ....
+  \item {\bf Run-time environment: } Using a one-time patch, we rebuild the Go runtime from version 1.15.6 and execute \goat in this runtime.
+  \item {\bf Hardware: } The version of Go that we use is built for AMD 64 processors.
+  \item {\bf Execution: } \goat's executable 
   \item {\bf Metrics: }
   \item {\bf Output: }
   \item {\bf Experiments: }
