@@ -1,0 +1,147 @@
+\subsection{Installation}
+
+GoAT is working in a custom runtime based on version [1.15.6](https://github.com/golang/go/tree/go1.15.6) of Golang.
+Lets say the original Go installation is under \texttt{/usr/local/go}. Then the following statements must be executed to build the \goat's runtime and resolve its dependencies:
+\begin{listing}[]
+
+
+\begin{minted}
+[
+fontsize=\footnotesize,
+linenos=false,
+escapeinside=||,
+breaklines
+]
+{bash}
+sudo -i
+mv /usr/local/go /usr/local/go-orig
+ln -nsf /usr/local/go-orig /usr/local/go
+
+# download fresh version 1.15.6
+wget https://golang.org/dl/go1.15.6.linux-amd64.tar.gz
+mkdir -p /usr/local/go-goat
+tar -xzvf go1.15.6.linux-amd64.tar.gz -C /usr/local/go-goat
+
+# set environment variables
+export GOPATH=$HOME/gopath
+mkdir $GOPATH
+export GOROOT=/usr/local/go
+export PATH=$PATH:$GOROOT/bin:$GOPATH/bin
+export GOATWS=$HOME/goatws
+mkdir -p $GOATWS
+export GOATTO=30
+export GOATMAXPROCS=4
+
+# path safety
+go get github.com/staheri/goat
+
+# build the runtime
+cd /usr/local/go-goat/go
+patch -p2 -d src/  < $GOPATH/src/github.com/staheri/goat/go1.15.6_goat_june15.patch
+cd src/
+export GOROOT_BOOTSTRAP=/usr/local/go-orig
+./make.bash
+ln -nsf /usr/local/go-goat/go /usr/local/go
+cd $GOPATH/src/github.com/staheri/goat
+go build -o $GOPATH/bin/goat
+\end{minted}
+\end{listing}
+
+\subsection{Experiment workflow}
+
+The \goat's help message illustrate its workflow:
+\begin{listing}[]
+\begin{minted}
+[
+fontsize=\footnotesize,
+linenos=false,
+escapeinside=||,
+breaklines
+]
+{bash}
+
+Usage of bin/goat-single:
+  -cov
+        Include coverage report in evaluation
+  -d int
+        Number of delays
+  -eval_conf string
+        Config file with benchmark paths in it
+  -freq int
+        Frequency of executions (default 1)
+  -path string
+        Target folder
+  -race
+        Enable race detection
+\end{minted}
+\end{listing}
+
+For example, for collecting traces from the execution of \texttt{CodeBenchmark/goBench\_goat/defSel/goatDefSel\_test.go}, analyze its traces for deadlocks, measure the execution coverage and generate visualizations, one can simply execute \texttt{goat -path=CodeBenchmark/goBench\_goat/defSel}.
+The output will be generated in a format like below:
+\begin{listing}[]
+\begin{minted}
+[
+fontsize=\footnotesize,
+linenos=false,
+escapeinside=||,
+breaklines
+]
+{bash}
+
+tree $GOATWS/p8/single_defSel
+goatws/p8/single_defSel
+└── goat_trace
+    ├── bin
+    │   └── 939498256trace
+    ├── concUsage.json
+    ├── out
+    │   └── goat_goat_d0.out
+    ├── results
+    │   └── p8_defSel_goat_d0_T1_hitBug.json
+    ├── src
+    │   └── goatDefSel_test.go
+    ├── traces
+    │   └── goat_d0
+    │       └── defSel_B0_I0.trace
+    ├── traceTimes
+    │   └── defSel_B0_I0.time
+    └── visual
+        ├── SUCC_defSel_B0_I0_fullVis.dot
+        ├── SUCC_defSel_B0_I0_fullVis.pdf
+        ├── SUCC_defSel_B0_I0_gtree.dot
+        ├── SUCC_defSel_B0_I0_gtree.pdf
+        ├── SUCC_defSel_B0_I0_minVis.dot
+        └── SUCC_defSel_B0_I0_minVis.pdf
+\end{minted}
+\end{listing}
+You can add delay(s) around concurrency usages of the target code via \texttt{-d} option and define the ferequency of test executions by \texttt{-freq}
+
+\subsection{Evaluation and expected results}
+Obtaining the results presented in this paper requires installation of the competant dynamic tools and the GoBench bug benchmark:
+
+\begin{listing}[]
+\begin{minted}
+[
+fontsize=\footnotesize,
+linenos=false,
+escapeinside=||,
+breaklines
+]
+{bash}
+# temporarily switch back to original Go
+ln -nsf /usr/local/go-orig /usr/local/go
+go get -u go.uber.org/goleak
+go get golang.org/x/tools/cmd/goimports
+go get github.com/sasha-s/go-deadlock
+# switch to GoAT's Go
+ln -nsf /usr/local/go-goat/go /usr/local/go
+
+git clone https://github.com/goodmorning-coder/gobench.git
+\end{minted}
+\end{listing}
+
+Then by executing \texttt{goat -conf=configs/conf_attn_blocking_all -freq=1000 -cov}, table \ref{tab:comparison} is fully constructible.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection{Notes}
+We are actively working on improving \goat and its documentations. Soon we will be having a docker version for \goat. Updates will be reflected in our github repo and also the zenodo submission.
